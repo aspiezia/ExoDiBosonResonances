@@ -71,7 +71,6 @@ private:
   void SelectHighptMuon( edm::Handle<pat::MuonCollection> muoH, std::vector<pat::MuonCollection::const_iterator> & SelectedMuo, int & Nmuo, reco::Vertex primaryVertex);
   void SelectTrackerMuon(edm::Handle<pat::MuonCollection> muoH, std::vector<pat::MuonCollection::const_iterator> & SelectedMuo, int & Nmuo, reco::Vertex primaryVertex);
   void SelectTrackerGlobalID(std::vector<pat::MuonCollection::const_iterator> SelectedMuo, reco::Vertex primaryVertex, bool & hasAtLeastOneHighPtMuo);
-  //void SelectTrackerGlobalMuon(edm::Handle<pat::MuonCollection> muoH, std::vector<pat::MuonCollection::const_iterator> & SelectedMuo,int & Nmuo, reco::Vertex primaryVertex);
   float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
   bool  ElectronDETIso(pat::ElectronCollection::const_iterator electron, float rho);
   float MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
@@ -673,35 +672,6 @@ void FullyLeptonicAnalyzer::SelectTrackerMuon(edm::Handle<pat::MuonCollection> m
     Nmuo = Nmuo + 1;
   }
 }
-/*
-void FullyLeptonicAnalyzer::SelectTrackerGlobalMuon(edm::Handle<pat::MuonCollection> muoH, vector<pat::MuonCollection::const_iterator> & SelectedMuo,int & Nmuo, reco::Vertex primaryVertex){
-  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
-    bool selected = false;
-    if(muon->isTrackerMuon()){
-      if(muon->pt()>20 && 
-	 abs(muon->eta())<2.4 && 
-	 abs(muon->phi())<3.2 && 
-	 muon->numberOfMatches()>1 && 
-	 fabs(muon->muonBestTrack()->dz(primaryVertex.position()))<0.5
-	 && fabs(muon->dB())<0.2 && 
-	 muon->innerTrack()->hitPattern().numberOfValidPixelHits()>0 && 
-	 muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5
-	 && (muon->muonBestTrack()->ptError()/muon->muonBestTrack()->pt())<0.3) selected = true;
-    }
-    if(muon->isGlobalMuon() && muon->isTrackerMuon()){
-      reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
-      if(cktTrack->pt()>20 && abs(cktTrack->eta())<2.4 && abs(cktTrack->phi())<3.2 && (cktTrack->ptError()/cktTrack->pt())<0.3
-	 && muon->globalTrack()->hitPattern().numberOfValidMuonHits()>0 && muon->numberOfMatches()>1 && fabs(cktTrack->dxy(primaryVertex.position()))<0.2
-	 && fabs(cktTrack->dz( primaryVertex.position()))<0.5 && muon->innerTrack()->hitPattern().numberOfValidPixelHits()>0
-	 && muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5) selected = true;
-    }
-    if(selected){
-      SelectedMuo.push_back(muon);
-      Nmuo = Nmuo + 1;
-    }
-  }
-}
-*/
 
 void FullyLeptonicAnalyzer::SelectTrackerGlobalID(vector<pat::MuonCollection::const_iterator> SelectedMuo, reco::Vertex primaryVertex, bool & hasAtLeastOneHighPtMuo){
   for(unsigned int i=0; i<SelectedMuo.size(); i++){
