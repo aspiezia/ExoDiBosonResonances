@@ -87,6 +87,8 @@ private:
   void massXPlot(edm::Handle<pat::METCollection> met, std::vector<pat::ElectronCollection::const_iterator> SelectedEle, 
 		 std::vector<pat::MuonCollection::const_iterator> SelectedMuo, math::PtEtaPhiMLorentzVector PrunedJet_prov, float XmassCA, float XMassSVFit);
   void otherPlot(edm::Handle<pat::METCollection> met, int Njet, int Nele, int Nmuo, float dRJetZ, int ele, int muo, int nbtagsL, int nbtagsM, int nbtagsT, bool selected);
+  void cutFlow(int ele, int muo, edm::Handle<pat::METCollection> met, std::vector<pat::JetCollection::const_iterator> SelectedJet, std::vector<float> SelectedPrunedMass, std::vector<pat::MuonCollection::const_iterator> SelectedMuo, std::vector<pat::ElectronCollection::const_iterator> SelectedEle, std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo, std::vector<pat::ElectronCollection::const_iterator> SelectedInitialEle, int jetInd, float rho, int nbtagsM, bool hasAtLeastOneHighPtMuo);
+  void cutFlowEMU(int ele, int muo, edm::Handle<pat::METCollection> met, std::vector<pat::JetCollection::const_iterator> SelectedJet, std::vector<float> SelectedPrunedMass, std::vector<pat::MuonCollection::const_iterator> SelectedMuo, std::vector<pat::ElectronCollection::const_iterator> SelectedEle, std::vector<pat::MuonCollection::const_iterator> SelectedHighptMuo, std::vector<pat::ElectronCollection::const_iterator> SelectedInitialEle, int jetInd, float rho, int nbtagsM);
 
  
 
@@ -124,6 +126,8 @@ private:
   TH1D* muonPtEMU; TH1D* muonEtaEMU; TH1D* muonDRMetEMU; TH1D* muonDPhiMetEMU; TH1D* muonPFIsoEMU; 
   TH1D* muonChi2EMU; TH1D* muonValidMuonHitsEMU; TH1D* muonMatchesEMU; TH1D* muondBEMU;
   TH1D* muondZEMU; TH1D* muonPixelHitsEMU; TH1D* muonLayersEMU; TH1D* muonDetIsoEMU;
+
+  TH1D* EffEleEle; TH1D* EffMuoMuo; TH1D* EffEleMuo;
 
   // ----------member data ---------------------------
 };
@@ -203,8 +207,9 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    edm::Handle<pat::JetCollection> ak5jetCands;
    iEvent.getByLabel("patJetsWithVarCHS",ak5jetCands);		
-   
+  
    int ele = 0; int muo = 0; int neu = 0;
+   vector<const reco::Candidate *> GEN;
    for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
      const reco::GenParticle & genPart = (*genParts)[ngenPart];
      if(abs(genPart.pdgId())==15 && genPart.status()!=3){
@@ -260,6 +265,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
    int nbtagsL=0; int nbtagsM=0; int nbtagsT=0;
    if(jetInd!=-1) BtagVeto(ak5jetCands, nbtagsL, nbtagsM, nbtagsT, SelectedJet[jetInd]);
    otherPlot(met, Njet, Nele, Nmuo, 0, ele, muo, nbtagsL, nbtagsM, nbtagsT, false);
+  
 
    //DI-ELECTRON SELECTION
    if(SelectedEle.size()==2 && SelectedJet.size()>0){
@@ -291,7 +297,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
      //PLOT
      if(met->begin()->pt()>100 && SelectedJet[jetInd]->pt()>80 && dRJetLep1>0.8 && dRJetLep2>0.8 && dRLepLep>0.02 && dPhiMetLep1<1 && dPhiMetLep2<1 && dilep.M()<70 
-	&& nbtagsM==0){
+	&& nbtagsM==0 && SelectedEle[0]->pt()>40 && SelectedEle[1]->pt()>40){
        electronPlot(met, SelectedEle, rho);
        jetPlot(met, SelectedJet, SelectedPrunedMass, SelectedMuo, SelectedEle, jetInd);
        massTauPlot(met,SelectedEle, SelectedMuo, MassSVFit, MassCA);
@@ -332,7 +338,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
      //PLOT
      if(met->begin()->pt()>100 && SelectedJet[jetInd]->pt()>80 && dRJetLep1>0.8 && dRJetLep2>0.8 && dRLepLep>0.02 && dPhiMetLep1<1 && dPhiMetLep2<1 && dilep.M()<70
-	&& nbtagsM==0){
+	&& nbtagsM==0 && (SelectedMuo[0]->pt()>40 || SelectedMuo[1]->pt()>40)){
        muonPlot(met, SelectedMuo, primaryVertex);
        jetPlot(met, SelectedJet, SelectedPrunedMass, SelectedMuo, SelectedEle, jetInd);
        massTauPlot(met, SelectedEle, SelectedMuo, MassSVFit, MassCA);
@@ -389,7 +395,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
      //PLOT
      if(met->begin()->pt()>100 && SelectedJet[jetInd]->pt()>80 && dRJetLep1>0.8 && dRJetLep2>0.8 && dRLepLep>0.02 && dPhiMetLep1<1 && dPhiMetLep2<1 && dilep.M()<70
-	&& nbtagsM==0){
+	&& nbtagsM==0 && SelectedEle[0]->pt()>40 && SelectedMuo[0]->pt()>40){
        EleMuoDRSelected->Fill(dRLepLep);
        electronPlot(met, SelectedEle, rho);
        muonPlot(met, SelectedMuo, primaryVertex);
@@ -530,6 +536,10 @@ FullyLeptonicAnalyzer::beginJob()
   electronDRMetEMU   = fs->make<TH1D>("electronDRMetEMU",   "electronDRMetEMU",   100,     0, 5    );
   electronDPhiMetEMU = fs->make<TH1D>("electronDPhiMetEMU", "electronDPhiMetEMU", 100,    -5, 5    );
   electronDetIsoEMU  = fs->make<TH1D>("electronDetIsoEMU",  "electronDetIsoEMU",  1500,    0, 1.5  ); 
+
+  EffEleEle = fs->make<TH1D>("EffEleEle", "EffEleEle",  20, -0.5, 19.5 ); 
+  EffMuoMuo = fs->make<TH1D>("EffMuoMuo", "EffMuoMuo",  20, -0.5, 19.5 ); 
+  EffEleMuo = fs->make<TH1D>("EffEleMuo", "EffEleMuo",  20, -0.5, 19.5 ); 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -592,7 +602,7 @@ void FullyLeptonicAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8Jetswit
     if(jet->chargedEmEnergyFraction()>=0.99) continue;
     if(jet->neutralHadronEnergyFraction()>=0.99) continue;
     if(jet->chargedHadronEnergyFraction()<=0.00) continue;
-    if(jet->pt()<30) continue;
+    if(jet->pt()<80) continue;
     if(abs(jet->eta())>2.4) continue;
     if(!(mass>70 && mass<110)) continue;
     if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
@@ -605,7 +615,7 @@ void FullyLeptonicAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8Jetswit
 
 void FullyLeptonicAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> eleH, vector<pat::ElectronCollection::const_iterator> & SelectedEle, int & Nele, float rho){
   for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
-    if(electron->pt()<20) continue;
+    if(electron->pt()<40) continue;
     if(!(abs(electron->eta())<1.4442 || (abs(electron->eta())>1.5666 && abs(electron->eta())<2.5))) continue;
     if(abs(electron->phi())>3.2) continue;
     if(electron->userInt("HEEPId")!=0) continue;
@@ -677,7 +687,7 @@ void FullyLeptonicAnalyzer::SelectTrackerGlobalID(vector<pat::MuonCollection::co
   for(unsigned int i=0; i<SelectedMuo.size(); i++){
     if(!(SelectedMuo[i]->isGlobalMuon())) continue;
     reco::TrackRef cktTrack = (muon::tevOptimized(*(SelectedMuo[i]), 200, 17., 40., 0.25)).first;
-    if(cktTrack->pt()<20) continue; 
+    if(cktTrack->pt()<20) continue;
     if(abs(cktTrack->eta())>2.4) continue;
     if(abs(cktTrack->phi())>3.2) continue;
     if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
@@ -1034,6 +1044,120 @@ void FullyLeptonicAnalyzer::otherPlot(edm::Handle<pat::METCollection> met, int N
    else if(ele==0 && muo==1) tauDecay->Fill(5);
    else if(ele==0 && muo==0) tauDecay->Fill(6);
    else                      tauDecay->Fill(7);
+  }
+}
+
+
+void FullyLeptonicAnalyzer::cutFlow(int ele, int muo, edm::Handle<pat::METCollection> met, vector<pat::JetCollection::const_iterator> SelectedJet, vector<float> SelectedPrunedMass, vector<pat::MuonCollection::const_iterator> SelectedMuo, vector<pat::ElectronCollection::const_iterator> SelectedEle, vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo, vector<pat::ElectronCollection::const_iterator> SelectedInitialEle, int jetInd, float rho, int nbtagsM, bool hasAtLeastOneHighPtMuo){   
+  
+  if(ele==2 && muo==0) {
+    EffEleEle->Fill(1);
+    bool mass=false; bool tau21=false; bool jetpt=false;
+    for(unsigned int j=0; j<SelectedJet.size(); j++){
+      if(SelectedPrunedMass[j]<110 && SelectedPrunedMass[j]>70) mass=true;
+      if(SelectedJet[j]->pt()>80) jetpt=true;
+      if(SelectedJet[j]->userFloat("tau2")/SelectedJet[j]->userFloat("tau1")<0.75) tau21=true;
+    }
+    if(mass) EffEleEle->Fill(2);
+    if(mass && jetpt) EffEleEle->Fill(3);
+    if(mass && jetpt && tau21 && jetInd!=-1) {
+      EffEleEle->Fill(4);
+      int NeleIso=0; int NeleDPhiMet=0; int NeleDRJet=0;
+      for(unsigned int i=0; i<SelectedInitialEle.size(); i++){
+	if(ROOT::Math::VectorUtil::DeltaR(SelectedInitialEle[i]->p4(),SelectedJet[jetInd]->p4())>0.8)  NeleDRJet=NeleDRJet+1;
+	if(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedInitialEle[i]->p4())<1) NeleDPhiMet=NeleDPhiMet+1;
+	if(ElectronDETIso(SelectedInitialEle[i],rho)) NeleIso=NeleIso+1;
+      }
+      if(SelectedInitialEle.size()>1)EffEleEle->Fill(5);
+      if(SelectedInitialEle.size()>1 && NeleDRJet>1 && NeleDPhiMet>1) EffEleEle->Fill(6);
+      if(SelectedInitialEle.size()>1 && NeleDRJet>1 && NeleDPhiMet>1 && NeleIso>1)EffEleEle->Fill(7);
+      if(SelectedEle.size()==2 && SelectedEle[0]->pt()>40 && SelectedEle[1]->pt()>40){
+	EffEleEle->Fill(8);
+	math::PtEtaPhiELorentzVector dilepton; dilepton = SelectedEle[0]->p4()+SelectedEle[1]->p4();
+	if(dilepton.M()!=0 && dilepton.M()<70)  EffEleEle->Fill(9);
+	if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100) EffEleEle->Fill(10);
+	if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100 && nbtagsM==0) EffEleEle->Fill(11);
+      }
+    }
+  }
+     
+  if(ele==0 && muo==2) {
+    EffMuoMuo->Fill(1);
+    bool mass=false; bool tau21=false; bool jetpt=false;
+    for(unsigned int j=0; j<SelectedJet.size(); j++){
+      if(SelectedPrunedMass[j]<110 && SelectedPrunedMass[j]>70) mass=true;
+      if(SelectedJet[j]->pt()>80) jetpt=true;
+      if(SelectedJet[j]->userFloat("tau2")/SelectedJet[j]->userFloat("tau1")<0.75) tau21=true;
+    }
+    if(mass) EffMuoMuo->Fill(2);
+    if(mass && jetpt) EffMuoMuo->Fill(3);
+    if(mass && jetpt && tau21 && jetInd!=-1) {
+      EffMuoMuo->Fill(4);
+      int NmuoIso=0; int NmuoDPhiMet=0; int NmuoDRJet=0;
+      for(unsigned int i=0; i<SelectedTrackerMuo.size(); i++){
+	if(ROOT::Math::VectorUtil::DeltaR(SelectedTrackerMuo[i]->p4(),SelectedJet[jetInd]->p4())>0.8)  NmuoDRJet=NmuoDRJet+1;
+	if(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTrackerMuo[i]->p4())<1) NmuoDPhiMet=NmuoDPhiMet+1;
+	if((MuonDETIso(SelectedTrackerMuo[i],SelectedTrackerMuo))<0.2) NmuoIso=NmuoIso+1;
+      }
+      if(hasAtLeastOneHighPtMuo){
+	if(SelectedTrackerMuo.size()>1)EffMuoMuo->Fill(5);
+	if(SelectedTrackerMuo.size()>1 && NmuoDRJet>1 && NmuoDPhiMet>1) EffMuoMuo->Fill(6);
+	if(SelectedTrackerMuo.size()>1 && NmuoDRJet>1 && NmuoDPhiMet>1 && NmuoIso>1)EffMuoMuo->Fill(7);
+	if(SelectedMuo.size()==2 && (SelectedMuo[0]->pt()>40 || SelectedMuo[1]->pt()>40)){
+	  EffMuoMuo->Fill(8);
+	  math::PtEtaPhiELorentzVector dilepton; dilepton = SelectedMuo[0]->p4()+SelectedMuo[1]->p4();
+	  if(dilepton.M()!=0 && dilepton.M()<70)  EffMuoMuo->Fill(9);
+	  if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100) EffMuoMuo->Fill(10);
+	  if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100 && nbtagsM==0) EffMuoMuo->Fill(11);
+	}
+      }
+    }
+  }
+}
+
+
+
+void FullyLeptonicAnalyzer::cutFlowEMU(int ele, int muo, edm::Handle<pat::METCollection> met, vector<pat::JetCollection::const_iterator> SelectedJet, vector<float> SelectedPrunedMass, vector<pat::MuonCollection::const_iterator> SelectedMuo, vector<pat::ElectronCollection::const_iterator> SelectedEle, vector<pat::MuonCollection::const_iterator> SelectedHighptMuo, vector<pat::ElectronCollection::const_iterator> SelectedInitialEle, int jetInd, float rho, int nbtagsM){        
+  if(ele==1 && muo==1) {
+    EffEleMuo->Fill(1);
+    bool mass=false; bool tau21=false; bool jetpt=false;
+    for(unsigned int j=0; j<SelectedJet.size(); j++){
+      if(SelectedPrunedMass[j]<110 && SelectedPrunedMass[j]>70) mass=true;
+      if(SelectedJet[j]->pt()>80) jetpt=true;
+      if(SelectedJet[j]->userFloat("tau2")/SelectedJet[j]->userFloat("tau1")<0.75) tau21=true;
+    }
+    if(mass) EffEleMuo->Fill(2);
+    if(mass && jetpt) EffEleMuo->Fill(3);
+    if(mass && jetpt && tau21 && jetInd!=-1) {
+      EffEleMuo->Fill(4);
+      int NmuoIso=0; int NmuoDPhiMet=0; int NmuoDRJet=0;
+      for(unsigned int i=0; i<SelectedHighptMuo.size(); i++){
+	if(ROOT::Math::VectorUtil::DeltaR(SelectedHighptMuo[i]->p4(),SelectedJet[jetInd]->p4())>0.8)  NmuoDRJet=NmuoDRJet+1;
+	if(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedHighptMuo[i]->p4())<1) NmuoDPhiMet=NmuoDPhiMet+1;
+	if(MuonPFIso(SelectedHighptMuo[i], true)<0.2) NmuoIso=NmuoIso+1;
+      }
+      int NeleIso=0; int NeleDPhiMet=0; int NeleDRJet=0;
+      for(unsigned int i=0; i<SelectedInitialEle.size(); i++){
+	if(ROOT::Math::VectorUtil::DeltaR(SelectedInitialEle[i]->p4(),SelectedJet[jetInd]->p4())>0.8)  NeleDRJet=NeleDRJet+1;
+	if(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedInitialEle[i]->p4())<1) NeleDPhiMet=NeleDPhiMet+1;
+	if(ElectronPFIso(SelectedInitialEle[i],rho)<0.15) NeleIso=NeleIso+1;
+      }
+      if(SelectedHighptMuo.size()>0)EffEleMuo->Fill(5);
+      if(SelectedHighptMuo.size()>0 && NmuoDRJet>0 && NmuoDPhiMet>0) EffEleMuo->Fill(6);
+      if(SelectedHighptMuo.size()>0 && NmuoDRJet>0 && NmuoDPhiMet>0 && NmuoIso>0) EffEleMuo->Fill(7);
+      if(SelectedHighptMuo.size()>0 && NmuoDRJet>0 && NmuoDPhiMet>0 && NmuoIso>0 && SelectedInitialEle.size()) EffEleMuo->Fill(8);
+      if(SelectedHighptMuo.size()>0 && NmuoDRJet>0 && NmuoDPhiMet>0 && NmuoIso>0 && SelectedInitialEle.size() && NeleDRJet>0 && NeleDPhiMet>0) EffEleMuo->Fill(9);
+      if(SelectedHighptMuo.size()>0 && NmuoDRJet>0 && NmuoDPhiMet>0 && NmuoIso>0 && SelectedInitialEle.size() && NeleDRJet>0 && NeleDPhiMet>0 && NeleIso>0) {
+	EffEleMuo->Fill(10);
+	if(SelectedMuo.size()==1 && SelectedEle.size()==1){
+	  EffEleMuo->Fill(11);
+	  math::PtEtaPhiELorentzVector dilepton; dilepton = SelectedEle[0]->p4()+SelectedMuo[0]->p4();
+	  if(dilepton.M()!=0 && dilepton.M()<70) EffEleMuo->Fill(12);
+	  if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100) EffEleMuo->Fill(13);
+	  if(dilepton.M()!=0 && dilepton.M()<70 && met->begin()->pt()>100 && nbtagsM==0) EffEleMuo->Fill(14);
+	}
+      }
+    }
   }
 }
 
