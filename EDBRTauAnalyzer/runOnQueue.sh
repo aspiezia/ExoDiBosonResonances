@@ -3,11 +3,15 @@
 dataset=$1
 numJob=$2
 queue=$3
+analysis=$4
+folder=$5
 
 
-mkdir $dataset
-cd $dataset
+mkdir $folder
+cd $folder
 cp ../createConfigFile.sh .
+cp ../script/createConfigFileNoCleanTau.sh .
+cp ../script/createConfigFileCleanTau.sh .
 cp ../createRunFile.sh .
 cp ../data/$dataset\_fileList.txt .
 
@@ -21,8 +25,16 @@ do
     min=$(($i*$numJob));
     max=$(($(($i+1))*$numJob));
     if [ "$min" -lt "$x" ]; then
-	./createConfigFile.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
-	./createRunFile.sh $dataset\_$i\_cfg.py $dataset &> run$i.sh
+	if [ "$analysis" == "fullyLeptonic" ]; then
+	    ./createConfigFile.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$analysis" == "NoCleanTau" ]; then
+	    ./createConfigFileNoCleanTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$analysis" == "CleanTau" ]; then
+	    ./createConfigFileCleanTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	./createRunFile.sh $dataset\_$i\_cfg.py $folder &> run$i.sh
 	chmod 777 run$i.sh
 	echo "bsub -q 8nh run$i.sh"
 	bsub -q $queue run$i.sh
