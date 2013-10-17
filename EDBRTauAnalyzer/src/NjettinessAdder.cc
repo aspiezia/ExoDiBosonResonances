@@ -1,5 +1,5 @@
-#include "ExoDiBosonResonances/EDBRTauAnalyzer/plugins/NjettinessAdder.h"
-#include "ExoDiBosonResonances/EDBRTauAnalyzer/plugins/Njettiness.hh"
+#include "ExoDiBosonResonances/EDBRTauAnalyzer/src/NjettinessAdder.h"
+#include "ExoDiBosonResonances/EDBRTauAnalyzer/interface/Njettiness.hh"
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 
