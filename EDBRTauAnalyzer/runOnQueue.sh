@@ -9,10 +9,10 @@ folder=$5
 
 mkdir $folder
 cd $folder
-cp ../createConfigFile.sh .
+cp ../script/createConfigFileFullyLep.sh .
 cp ../script/createConfigFileNoCleanTau.sh .
 cp ../script/createConfigFileCleanTau.sh .
-cp ../createRunFile.sh .
+cp ../script/createRunFile.sh .
 cp ../data/$dataset\_fileList.txt .
 
 x=$(cat $dataset\_fileList.txt | wc -l)
@@ -26,7 +26,7 @@ do
     max=$(($(($i+1))*$numJob));
     if [ "$min" -lt "$x" ]; then
 	if [ "$analysis" == "fullyLeptonic" ]; then
-	    ./createConfigFile.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	    ./createConfigFileFullyLep.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
 	fi
 	if [ "$analysis" == "NoCleanTau" ]; then
 	    ./createConfigFileNoCleanTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
