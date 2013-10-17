@@ -10,6 +10,7 @@ folder=$5
 mkdir $folder
 cd $folder
 cp ../script/createConfigFileFullyLep.sh .
+cp ../script/createConfigFileMuTau.sh .
 cp ../script/createConfigFileNoCleanTau.sh .
 cp ../script/createConfigFileCleanTau.sh .
 cp ../script/createRunFile.sh .
@@ -27,6 +28,9 @@ do
     if [ "$min" -lt "$x" ]; then
 	if [ "$analysis" == "fullyLeptonic" ]; then
 	    ./createConfigFileFullyLep.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$analysis" == "MuonTau" ]; then
+	    ./createConfigFileMuTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
 	fi
 	if [ "$analysis" == "NoCleanTau" ]; then
 	    ./createConfigFileNoCleanTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
