@@ -111,6 +111,12 @@ private:
   TH1D* h_mutau_againstMuonLoose3; TH1D* h_mutau_againstMuonTight3; TH1D* h_mutau_againstElectronLooseMVA3; TH1D* h_mutau_againstElectronMediumMVA3; 
   TH1D* h_mutau_byCombinedIsolationDeltaBetaCorrRaw3Hits; TH1D* h_mutau_byLooseCombinedIsolationDeltaBetaCorr3Hits; TH1D* h_mutau_byMediumCombinedIsolationDeltaBetaCorr3Hits;
 
+  TH2D* h_mutau_decayModeFindingVsDR; TH2D* h_mutau_againstMuonMediumVsDR; TH2D* h_mutau_againstElectronMediumVsDR; TH2D* h_mutau_ByVLooseCombinedIsolationDBSumPtCorrVsDR; 
+  TH2D* h_mutau_againstMuonLooseVsDR; TH2D* h_mutau_againstElectronLooseVsDR; TH2D* h_mutau_againstMuonLoose2VsDR; TH2D* h_mutau_againstMuonMedium2VsDR;
+  TH2D* h_mutau_againstMuonLoose3VsDR; TH2D* h_mutau_againstMuonTight3VsDR; TH2D* h_mutau_againstElectronLooseMVA3VsDR; TH2D* h_mutau_againstElectronMediumMVA3VsDR; 
+  TH2D* h_mutau_byCombinedIsolationDeltaBetaCorrRaw3HitsVsDR; TH2D* h_mutau_byLooseCombinedIsolationDeltaBetaCorr3HitsVsDR; 
+  TH2D* h_mutau_byMediumCombinedIsolationDeltaBetaCorr3HitsVsDR;
+
   TH1D* deltaRGenReco_mutau; 
   TH1D* recoTauPt_mutau; TH1D* recoTauMass_mutau; TH1D* recoTauDecayMode; TH1D* recoMuonPt;
   TH1D* recoTauleadPFCandPt; TH1D* recoTauPlusMuonPt; TH1D* recoLeadMinusMuonPtNorm; TH1D* recoLeadMinusMuonPt;
@@ -325,6 +331,7 @@ TauCleaningAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 			
   //CASE MU-TAU_H
   if(signal_ && gentau.size()==2 && ((taumuo1 && !taumuo2 && !tauele2) || (!taumuo1 && !tauele1 && taumuo2))){
+    tauSelection_mutau->Fill(1);
 
     float deltaR_muon=99.; int muonIndex = -1;
     for ( unsigned int i=0; i<muH->size(); ++i ){
@@ -399,20 +406,20 @@ TauCleaningAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
       recoTauPt_mutau->Fill(PFTau->pt());
       recoTauMass_mutau->Fill(PFTau->mass());
       recoTauDecayMode->Fill(PFTau->decayMode());
-      if(PFTau->leadPFCand().isNonnull()) recoTauleadPFCandPt->Fill(PFTau->leadPFCand()->pt());
-      tauSelection_mutau->Fill(1);
-      if(PFTau->pt()>20) tauSelection_mutau->Fill(2);
-      if(PFTau->pt()>20 && outputDiscmnt1>0.5) tauSelection_mutau->Fill(3);
-      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5) tauSelection_mutau->Fill(4);
-      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5 && outputDiscmnt6>0.5) tauSelection_mutau->Fill(5);
-      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5 && outputDiscmnt6>0.5 && outputDiscmnt4>0.5) tauSelection_mutau->Fill(6);
+      if(PFTau->leadPFCand().isNonnull()) {if(PFTau->leadPFCand()->charge()!=0) recoTauleadPFCandPt->Fill(PFTau->leadPFCand()->pt());}
+      tauSelection_mutau->Fill(2);
+      if(PFTau->pt()>20) tauSelection_mutau->Fill(3);
+      if(PFTau->pt()>20 && outputDiscmnt1>0.5) tauSelection_mutau->Fill(4);
+      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5) tauSelection_mutau->Fill(5);
+      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5 && outputDiscmnt6>0.5) tauSelection_mutau->Fill(6);
+      if(PFTau->pt()>20 && outputDiscmnt1>0.5 && outputDiscmnt5>0.5 && outputDiscmnt6>0.5 && outputDiscmnt4>0.5) tauSelection_mutau->Fill(7);
       
       if(muonIndex!=-1) {
 	const reco::Muon& muon(muH->at(muonIndex));
 	TLorentzVector TauPlusMuon; TauPlusMuon.SetPxPyPzE(PFTau->px()+muon.px(),PFTau->py()+muon.py(),PFTau->pz()+muon.pz(),PFTau->energy()+muon.energy());
 	recoTauPlusMuonPt->Fill(TauPlusMuon.Pt());
-	if(PFTau->leadPFCand().isNonnull()) recoLeadMinusMuonPtNorm->Fill((muon.pt()-PFTau->leadPFCand()->pt())/(muon.pt()));
-	if(PFTau->leadPFCand().isNonnull()) recoLeadMinusMuonPt->Fill(fabs(muon.pt()-PFTau->leadPFCand()->pt()));
+	if(PFTau->leadPFCand().isNonnull()) {if(PFTau->leadPFCand()->charge()!=0) recoLeadMinusMuonPtNorm->Fill((muon.pt()-PFTau->leadPFCand()->pt())/(muon.pt()));}
+	if(PFTau->leadPFCand().isNonnull()) {if(PFTau->leadPFCand()->charge()!=0) recoLeadMinusMuonPt->Fill(fabs(muon.pt()-PFTau->leadPFCand()->pt()));}
       }
  		      
       if(PFTau->pt()>20){
@@ -431,6 +438,23 @@ TauCleaningAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	h_mutau_byCombinedIsolationDeltaBetaCorrRaw3Hits->Fill(outputDiscmnt13);
 	h_mutau_byLooseCombinedIsolationDeltaBetaCorr3Hits->Fill(outputDiscmnt14);
 	h_mutau_byMediumCombinedIsolationDeltaBetaCorr3Hits->Fill(outputDiscmnt15);
+
+	h_mutau_decayModeFindingVsDR->Fill(outputDiscmnt1,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonMediumVsDR->Fill(outputDiscmnt2,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstElectronMediumVsDR->Fill(outputDiscmnt3,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_ByVLooseCombinedIsolationDBSumPtCorrVsDR->Fill(outputDiscmnt4,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonLooseVsDR->Fill(outputDiscmnt5,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstElectronLooseVsDR->Fill(outputDiscmnt6,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstElectronLooseMVA3VsDR->Fill(outputDiscmnt7,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstElectronMediumMVA3VsDR->Fill(outputDiscmnt8,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonLoose2VsDR->Fill(outputDiscmnt9,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonMedium2VsDR->Fill(outputDiscmnt10,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonLoose3VsDR->Fill(outputDiscmnt11,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_againstMuonTight3VsDR->Fill(outputDiscmnt12,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_byCombinedIsolationDeltaBetaCorrRaw3HitsVsDR->Fill(outputDiscmnt13,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_byLooseCombinedIsolationDeltaBetaCorr3HitsVsDR->Fill(outputDiscmnt14,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+	h_mutau_byMediumCombinedIsolationDeltaBetaCorr3HitsVsDR->Fill(outputDiscmnt15,ROOT::Math::VectorUtil::DeltaR(gentau[0],gentau[1]));
+
 	ptResol_mutau->Fill((PFTau->pt() - gentauHad[0].pt())/gentauHad[0].pt());
 	ptRatio_mutau->Fill(PFTau->pt()/gentauHad[0].pt());
 	Response_mutau->Fill(gentauHad[0].pt(), (PFTau->pt() - gentauHad[0].pt())/gentauHad[0].pt());
@@ -512,6 +536,26 @@ TauCleaningAnalyzer::beginJob()
   h_mutau_byCombinedIsolationDeltaBetaCorrRaw3Hits=fs->make<TH1D>("h_mutau_byCombinedIsolationDeltaBetaCorrRaw3Hits","h_mutau_byCombinedIsolationDeltaBetaCorrRaw3Hits", 4, -1.5, 2.5 );
   h_mutau_byLooseCombinedIsolationDeltaBetaCorr3Hits=fs->make<TH1D>("h_mutau_byLooseCombinedIsolationDeltaBetaCorr3Hits","h_mutau_byLooseCombinedIsolationDeltaBetaCorr3Hits", 4, -1.5, 2.5 );
   h_mutau_byMediumCombinedIsolationDeltaBetaCorr3Hits=fs->make<TH1D>("h_mutau_byMediumCombinedIsolationDeltaBetaCorr3Hits","h_mutau_byMediumCombinedIsolationDeltaBetaCorr3Hits", 4, -1.5, 2.5 );
+
+  h_mutau_decayModeFindingVsDR = fs->make<TH2D>( "h_mutau_decayModeFindingVsDR", "h_mutau_decayModeFindingVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstMuonMediumVsDR = fs->make<TH2D>( "h_mutau_againstMuonMediumVsDR", "h_mutau_againstMuonMediumVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstElectronMediumVsDR = fs->make<TH2D>( "h_mutau_againstElectronMediumVsDR", "h_mutau_againstElectronMediumVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_ByVLooseCombinedIsolationDBSumPtCorrVsDR = fs->make<TH2D>( "h_mutau_ByVLooseCombinedIsolationDBSumPtCorrVsDR", 
+								     "h_mutau_ByVLooseCombinedIsolationDBSumPtCorrVsDR", 4,-1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstMuonLooseVsDR=fs->make<TH2D>("h_mutau_againstMuonLooseVsDR","h_mutau_againstMuonLooseVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstElectronLooseVsDR=fs->make<TH2D>("h_mutau_againstElectronLooseVsDR","h_mutau_againstElectronLooseVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstElectronLooseMVA3VsDR=fs->make<TH2D>("h_mutau_againstElectronLooseMVA3VsDR","h_mutau_againstElectronLooseMVA3VsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstElectronMediumMVA3VsDR=fs->make<TH2D>("h_mutau_againstElectronMediumMVA3VsDR","h_mutau_againstElectronMediumMVA3VsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstMuonLoose2VsDR=fs->make<TH2D>("h_mutau_againstMuonLoose2VsDR","h_mutau_againstMuonLoose2VsDR", 4, -1.5, 2.5,1000, 0, 10 );
+  h_mutau_againstMuonMedium2VsDR=fs->make<TH2D>("h_mutau_againstMuonMedium2VsDR","h_mutau_againstMuonMedium2VsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstMuonLoose3VsDR=fs->make<TH2D>("h_mutau_againstMuonLoose3VsDR","h_mutau_againstMuonLoose3VsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_againstMuonTight3VsDR=fs->make<TH2D>("h_mutau_againstMuonTight3VsDR","h_mutau_againstMuonTight3VsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_byCombinedIsolationDeltaBetaCorrRaw3HitsVsDR=fs->make<TH2D>("h_mutau_byCombinedIsolationDeltaBetaCorrRaw3HitsVsDR",
+								      "h_mutau_byCombinedIsolationDeltaBetaCorrRaw3HitsVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_byLooseCombinedIsolationDeltaBetaCorr3HitsVsDR=fs->make<TH2D>("h_mutau_byLooseCombinedIsolationDeltaBetaCorr3HitsVsDR",
+									"h_mutau_byLooseCombinedIsolationDeltaBetaCorr3HitsVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
+  h_mutau_byMediumCombinedIsolationDeltaBetaCorr3HitsVsDR=fs->make<TH2D>("h_mutau_byMediumCombinedIsolationDeltaBetaCorr3HitsVsDR",
+  "h_mutau_byMediumCombinedIsolationDeltaBetaCorr3HitsVsDR", 4, -1.5, 2.5, 1000, 0, 10 );
 
   deltaRHad = fs->make<TH1D>("deltaRHad", "deltaRHad", 1000, 0, 10 );
   deltaRGenReco_mutau = fs->make<TH1D>("deltaRGenReco_mutau", "deltaRGenReco_mutau", 1000, 0, 10 );
