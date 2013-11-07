@@ -1,6 +1,9 @@
 ####### TAKE THE CODE FORM GIT #######
-cmsrel CMSSW_5_3_11_patch6
-cd CMSSW_5_3_11_patch6/src
+cmsrel CMSSW_5_3_12
+cd CMSSW_5_3_12
+cmsenv
+git cms-merge-topic -u cms-tau-pog:CMSSW_5_3_X_HighPt
+cd src
 cmsenv
 git clone git@github.com:YOURNAME/ExoDiBosonResonances.git
 cvs co -r V00-02-03s TauAnalysis/CandidateTools
