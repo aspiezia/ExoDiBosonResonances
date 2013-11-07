@@ -97,6 +97,27 @@ private:
   TH1D* jetDRTauNO;
   TH1D* jetDRMuoNO;
 
+  TTree *TreeVariable;
+  float m_jetMass;
+  float m_jetPt;
+  float m_jetTau21;
+  float m_tauPt;
+  float m_muonPt;
+  float m_metPt;
+  float m_jetDPhiMet;
+  float m_jetDRMet;
+  float m_jetDRMuo;
+  float m_jetDRTau;
+  float m_tauDPhiMet;
+  float m_tauDRMet;
+  float m_tauDRMuo;
+  float m_muonDPhiMet;
+  float m_muonDRMet;
+  float m_muonPFIso;
+  float m_ZDRZ;
+  float m_MassSvfitTauMuo;
+  float m_XMassSVFit;
+
   // ----------member data ---------------------------
 };
 
@@ -307,6 +328,27 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
 	      TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
 	      XMassSVFit->Fill((SVFitTauTau+PrunedJet).M());
+
+	      m_jetMass=massZ;
+	      m_jetPt=SelectedJet->pt();
+	      m_jetTau21=tau21Z;
+	      m_tauPt=SelectedTau->pt();
+	      m_muonPt=SelectedMuon->pt();
+	      m_metPt=met->begin()->pt();
+	      m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+	      m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+	      m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+	      m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
+	      m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
+	      m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
+	      m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
+	      m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+	      m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+	      m_muonPFIso=MuonPFIso(SelectedMuon,true);
+	      m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+	      m_MassSvfitTauMuo=algo.getMass();
+	      m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
+	      TreeVariable->Fill();
 	    }
 	  }
 	}
@@ -360,6 +402,27 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
 	    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
 	    XMassSVFit->Fill((SVFitTauTau+PrunedJet).M());
+
+	    m_jetMass=massZ;
+	    m_jetPt=SelectedJet->pt();
+	    m_jetTau21=tau21Z;
+	    m_tauPt=SelectedTau->pt();
+	    m_muonPt=SelectedMuon->pt();
+	    m_metPt=met->begin()->pt();
+	    m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+	    m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+	    m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+	    m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
+	    m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
+	    m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
+	    m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
+	    m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+	    m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+	    m_muonPFIso=MuonPFIso(SelectedMuon,true);
+	    m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+	    m_MassSvfitTauMuo=algo.getMass();
+	    m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
+	    TreeVariable->Fill();
 	  }
 	}
       }
@@ -515,6 +578,26 @@ void
 MuTauAnalyzer::beginJob()
 {
   Service<TFileService> fs;
+  TreeVariable = fs->make<TTree>("TreeVariable", "TreeVariable");
+  TreeVariable->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeVariable->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeVariable->Branch("jetTau21", &m_jetTau21, "jetTau21/f");
+  TreeVariable->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeVariable->Branch("muonPt", &m_muonPt, "muonPt/f");
+  TreeVariable->Branch("metPt", &m_metPt, "metPt/f");
+  TreeVariable->Branch("jetDPhiMet", &m_jetDPhiMet, "jetDPhiMet/f");
+  TreeVariable->Branch("jetDRMet", &m_jetDRMet, "jetDRMet/f");
+  TreeVariable->Branch("jetDRMuo", &m_jetDRMuo, "jetDRMuo/f");
+  TreeVariable->Branch("jetDRTau", &m_jetDRTau, "jetDRTau/f");
+  TreeVariable->Branch("tauDPhiMet", &m_tauDPhiMet, "tauDPhiMet/f");
+  TreeVariable->Branch("tauDRMet", &m_tauDRMet, "tauDRMet/f");
+  TreeVariable->Branch("tauDRMuo", &m_tauDRMuo, "tauDRMuo/f");
+  TreeVariable->Branch("muonDPhiMet", &m_muonDPhiMet, "muonDPhiMet/f");
+  TreeVariable->Branch("muonDRMet", &m_muonDRMet, "muonDRMet/f");
+  TreeVariable->Branch("muonPFIso", &m_muonPFIso, "muonPFIso/f");
+  TreeVariable->Branch("ZDRZ", &m_ZDRZ, "ZDRZ/f");
+  TreeVariable->Branch("MassSvfitTauMuo", &m_MassSvfitTauMuo, "MassSvfitTauMuo/f");
+  TreeVariable->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
 
   efficiency      = fs->make<TH1D>("efficiency",      "efficiency",      3, -0.5, 2.5);
   jetMass         = fs->make<TH1D>("jetMass",         "jetMass",         400, 0, 200);

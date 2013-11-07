@@ -98,6 +98,28 @@ private:
   TH1D* tauDRMuoNO;
   TH1D* NVertices;
 
+  TTree *TreeVariable;
+
+  float m_jetMass;
+  float m_jetPt;
+  float m_jetTau21;
+  float m_tauPt;
+  float m_muonPt;
+  float m_metPt;
+  float m_jetDPhiMet;
+  float m_jetDRMet;
+  float m_jetDRMuo;
+  float m_jetDRTau;
+  float m_tauDPhiMet;
+  float m_tauDRMet;
+  float m_tauDRMuo;
+  float m_muonDPhiMet;
+  float m_muonDRMet;
+  float m_muonPFIso;
+  float m_ZDRZ;
+  float m_MassSvfitTauMuo;
+  float m_XMassSVFit;
+
   // ----------member data ---------------------------
 };
 
@@ -140,7 +162,7 @@ SidebandMuTauAnalyzer::~SidebandMuTauAnalyzer()
 void
 SidebandMuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  
+
   Handle<reco::VertexCollection> vertices;
   iEvent.getByLabel("primaryVertexFilter", vertices);
   reco::Vertex primaryVertex;
@@ -153,7 +175,7 @@ SidebandMuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::InputTag trigResultsTag("TriggerResults","","HLT");  
   iEvent.getByLabel(trigResultsTag,trigResults);
   const edm::TriggerNames& trigNames = iEvent.triggerNames(*trigResults);
-  if(trigResults->accept(trigNames.triggerIndex("HLT_PFJet320_v*"))) cout<<"AAAAAAAA"<<endl;
+  //if(trigResults->accept(trigNames.triggerIndex("HLT_PFJet320_v*"))) cout<<"AAAAAAAA"<<endl;
   */
 
   //JET SELECTION
@@ -283,7 +305,7 @@ SidebandMuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       algo.integrateMarkovChain();
       if(algo.pt()>0){
 	if(algo.getMass()>20){
-      
+
 	  jetMass->Fill(massZ);
 	  jetPt->Fill(SelectedJet->pt());
 	  jetTau21->Fill(tau21Z);
@@ -306,6 +328,27 @@ SidebandMuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	  math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
 	  TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
 	  XMassSVFit->Fill((SVFitTauTau+PrunedJet).M());
+
+	  m_jetMass=massZ;
+	  m_jetPt=SelectedJet->pt();
+	  m_jetTau21=tau21Z;
+	  m_tauPt=SelectedTau->pt();
+	  m_muonPt=SelectedMuon->pt();
+	  m_metPt=met->begin()->pt();
+	  m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+	  m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+	  m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+	  m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
+	  m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
+	  m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
+	  m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
+	  m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+	  m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+	  m_muonPFIso=MuonPFIso(SelectedMuon,true);
+	  m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+	  m_MassSvfitTauMuo=algo.getMass();
+	  m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
+	  TreeVariable->Fill();
 	}
       }
     }
@@ -460,23 +503,44 @@ void
 SidebandMuTauAnalyzer::beginJob()
 {
   Service<TFileService> fs;
+  TreeVariable = fs->make<TTree>("TreeVariable", "TreeVariable");
+  TreeVariable->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeVariable->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeVariable->Branch("jetTau21", &m_jetTau21, "jetTau21/f");
+  TreeVariable->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeVariable->Branch("muonPt", &m_muonPt, "muonPt/f");
+  TreeVariable->Branch("metPt", &m_metPt, "metPt/f");
+  TreeVariable->Branch("jetDPhiMet", &m_jetDPhiMet, "jetDPhiMet/f");
+  TreeVariable->Branch("jetDRMet", &m_jetDRMet, "jetDRMet/f");
+  TreeVariable->Branch("jetDRMuo", &m_jetDRMuo, "jetDRMuo/f");
+  TreeVariable->Branch("jetDRTau", &m_jetDRTau, "jetDRTau/f");
+  TreeVariable->Branch("tauDPhiMet", &m_tauDPhiMet, "tauDPhiMet/f");
+  TreeVariable->Branch("tauDRMet", &m_tauDRMet, "tauDRMet/f");
+  TreeVariable->Branch("tauDRMuo", &m_tauDRMuo, "tauDRMuo/f");
+  TreeVariable->Branch("muonDPhiMet", &m_muonDPhiMet, "muonDPhiMet/f");
+  TreeVariable->Branch("muonDRMet", &m_muonDRMet, "muonDRMet/f");
+  TreeVariable->Branch("muonPFIso", &m_muonPFIso, "muonPFIso/f");
+  TreeVariable->Branch("ZDRZ", &m_ZDRZ, "ZDRZ/f");
+  TreeVariable->Branch("MassSvfitTauMuo", &m_MassSvfitTauMuo, "MassSvfitTauMuo/f");
+  TreeVariable->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  
   NVertices       = fs->make<TH1D>("NVertices",       "NVertices",       200, 0, 200);
   jetMass         = fs->make<TH1D>("jetMass",         "jetMass",         400, 0, 200);
-  jetPt           = fs->make<TH1D>("jetPt",           "jetPt",           200, 0, 2000);
+  jetPt           = fs->make<TH1D>("jetPt",           "jetPt",           200, 0, 20000);
   jetTau21        = fs->make<TH1D>("jetTau21",        "jetTau21",        100, 0, 1);
   jetDRMet        = fs->make<TH1D>("jetDRMet",        "jetDRMet",        100, 0, 5);
   jetDRTau        = fs->make<TH1D>("jetDRTau",        "jetDRTau",        100, 0, 5);
   jetDRMuo        = fs->make<TH1D>("jetDRMuo",        "jetDRMuo",        100, 0, 5);
   jetDPhiMet      = fs->make<TH1D>("jetDPhiMet",      "jetDPhiMet",      100, -5, 5);
-  tauPt           = fs->make<TH1D>("tauPt",           "tauPt",           200, 0, 2000);
+  tauPt           = fs->make<TH1D>("tauPt",           "tauPt",           200, 0, 20000);
   tauDRMet        = fs->make<TH1D>("tauDRMet",        "tauDRMet",        100, 0, 5);
   tauDRMuo        = fs->make<TH1D>("tauDRMuo",        "tauDRMuo",        100, 0, 5);
   tauDPhiMet      = fs->make<TH1D>("tauDPhiMet",      "tauDPhiMet",      100, -5, 5);
-  muonPt          = fs->make<TH1D>("muonPt",          "muonPt",          200, 0, 2000);
+  muonPt          = fs->make<TH1D>("muonPt",          "muonPt",          200, 0, 20000);
   muonDRMet       = fs->make<TH1D>("muonDRMet",       "muonDRMet",       100, 0, 5);
   muonDPhiMet     = fs->make<TH1D>("muonDPhiMet",     "muonDPhiMet",     100, -5, 5);
   muonPFIso       = fs->make<TH1D>("muonPFIso",       "muonPFIso",       500, 0, 5);
-  metPt           = fs->make<TH1D>("metPt",           "metPt",           200, 0, 2000);
+  metPt           = fs->make<TH1D>("metPt",           "metPt",           200, 0, 20000);
   ZDRZ            = fs->make<TH1D>("ZDRZ",            "ZDRZ",            100, 0, 5);
   MassSvfitTauMuo = fs->make<TH1D>("MassSvfitTauMuo", "MassSvfitTauMuo", 500, 0, 500);
   XMassSVFit      = fs->make<TH1D>("XMassSVFit",      "XMassSVFit",      300, 0, 3000);
