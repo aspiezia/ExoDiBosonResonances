@@ -5,6 +5,9 @@
 <use name="DataFormats/PatCandidates"/>
 <use name="CommonTools/UtilAlgos"/>
 <use name="TauAnalysis/CandidateTools"/>
+<use name="TauAnalysis/CandidateTools"/>
+<use name="EgammaAnalysis/ElectronTools"/>
+<use name="PhysicsTools/Utilities"/>
 
 <flags EDM_PLUGIN="1"/>
 <export>

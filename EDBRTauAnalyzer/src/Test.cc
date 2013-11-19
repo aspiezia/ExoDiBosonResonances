@@ -139,18 +139,16 @@ Test::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   
   
-  //Handle<reco::PFJetCollection> PFJets;
-  //iEvent.getByLabel("ak5PFJetsNoMu", PFJets);
-  //Handle<reco::PFJetCollection> PFJetsSiMu;
-  //iEvent.getByLabel("ak5PFJets", PFJetsSiMu);
-
-  //Handle<vector<reco::GenParticle> > genParts;
-  //iEvent.getByLabel("genParticles", genParts);
-
-    //Handle<reco::PFTauCollection> tauHandle;
-  //iEvent.getByLabel("hpsPFTauProducer",tauHandle);
-  //Handle<reco::PFTauDiscriminator> decayModeFinding;
-  //iEvent.getByLabel("hpsPFTauDiscriminationByDecayModeFinding",decayModeFinding);
+  Handle<reco::PFJetCollection> PFJets;
+  iEvent.getByLabel("ak5PFJetsNoEle", PFJets);
+  Handle<reco::PFJetCollection> PFJetsSiMu;
+  iEvent.getByLabel("ak5PFJets", PFJetsSiMu);
+  Handle<vector<reco::GenParticle> > genParts;
+  iEvent.getByLabel("genParticles", genParts);
+  Handle<reco::PFTauCollection> tauHandle;
+  iEvent.getByLabel("hpsPFTauProducer",tauHandle);
+  Handle<reco::PFTauDiscriminator> decayModeFinding;
+  iEvent.getByLabel("hpsPFTauDiscriminationByDecayModeFinding",decayModeFinding);
 
   edm::Handle<reco::PFJetCollection> CA8JetswithQjets;
   iEvent.getByLabel("ca8PFJetsCHSwithNsub", CA8JetswithQjets);
@@ -195,8 +193,7 @@ Test::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetCA8Pt->Fill(ptZ);
     jetCA8Tau21->Fill(tau21Z);
   }
-		
-  /*
+
   int ele = 0; int muo = 0;
   vector<const reco::Candidate *> GEN;
   math::PtEtaPhiELorentzVector gentau_prov;
@@ -243,7 +240,7 @@ Test::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   }
 
-  if(ele==0 && muo==2){
+  if(ele==2 && muo==0){
     for(reco::PFJetCollection::const_iterator iJet = PFJets->begin(); iJet != PFJets->end(); ++iJet){
       if(iJet->pt()<20) continue;
       jetPt_mh_NoMu->Fill(iJet->pt());
@@ -322,7 +319,6 @@ Test::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   }
 
-  */
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
   Handle<ExampleData> pIn;
@@ -341,7 +337,6 @@ void
 Test::beginJob()
 {
   Service<TFileService> fs;
-  /*
   jetPt_mh   = fs->make<TH1D>("jetPt_mh",   "jetPt_mh",   1000, 0, 1000);
   jetEta_mh  = fs->make<TH1D>("jetEta_mh",  "jetEta_mh",  600, -3, 3   );
   jetMass_mh = fs->make<TH1D>("jetMass_mh", "jetMass_mh", 300,  0, 300 );
@@ -375,7 +370,6 @@ Test::beginJob()
   jetChargedEmEnergyFraction_hh_NoMu     = fs->make<TH1D>("jetChargedEmEnergyFraction_hh_NoMu",     "jetChargedEmEnergyFraction_hh_NoMu",     100, 0, 1);
   jetNeutralHadronEnergyFraction_hh_NoMu = fs->make<TH1D>("jetNeutralHadronEnergyFraction_hh_NoMu", "jetNeutralHadronEnergyFraction_hh_NoMu", 100, 0, 1);
   jetChargedHadronEnergyFraction_hh_NoMu = fs->make<TH1D>("jetChargedHadronEnergyFraction_hh_NoMu", "jetChargedHadronEnergyFraction_hh_NoMu", 100, 0, 1);
-*/
 
   jetCA8Mass = fs->make<TH1D>("jetCA8Mass", "jetCA8Mass", 1000, 0, 200);
   jetCA8Pt = fs->make<TH1D>("jetCA8Pt", "jetCA8Pt", 2000, 0, 2000);

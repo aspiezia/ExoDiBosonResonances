@@ -16,6 +16,8 @@ cp ../script/createConfigFilePt.sh .
 cp ../script/createConfigFileMuTau.sh .
 cp ../script/createConfigFileNoCleanTau.sh .
 cp ../script/createConfigFileCleanTau.sh .
+cp ../script/createConfigFileNoCleanETau.sh .
+cp ../script/createConfigFileCleanETau.sh .
 cp ../script/createRunFile.sh .
 cp ../data/$dataset\_fileList.txt .
 
@@ -49,6 +51,12 @@ do
 	fi
 	if [ "$analysis" == "CleanTau" ]; then
 	    ./createConfigFileCleanTau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$analysis" == "NoCleanETau" ]; then
+	    ./createConfigFileNoCleanETau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$analysis" == "CleanETau" ]; then
+	    ./createConfigFileCleanETau.sh $min $max $i $dataset &> $dataset\_$i\_cfg.py
 	fi
 	./createRunFile.sh $dataset\_$i\_cfg.py $folder &> run$i.sh
 	chmod 777 run$i.sh

@@ -281,26 +281,51 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(ele==0 && muo==1){
       efficiency->Fill(1);
       if(foundJet && foundTau && foundMuon){
-	if(met->begin()->pt()>50
-	   && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4())>2.5 
-	   && ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(), SelectedJet->p4())>2.5
-	   && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4())>0.05
-	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4()))<1 
-	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4()))<1
-	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4()))>2 ){
+	
+	TMatrixD covMET(2, 2); // PFMET significance matrix
+	covMET[0][0] = (met->front() ).getSignificanceMatrix()(0,0);
+	covMET[1][0] = (met->front() ).getSignificanceMatrix()(1,0);
+	covMET[0][1] = (met->front() ).getSignificanceMatrix()(0,1);
+	covMET[1][1] = (met->front() ).getSignificanceMatrix()(1,1);
+	std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
+	measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTau->p4()));
+	measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
+	NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
+	algo.addLogM(false);
+	algo.integrateMarkovChain();
+	if(algo.pt()>0){
 	  
-	  TMatrixD covMET(2, 2); // PFMET significance matrix
-	  covMET[0][0] = (met->front() ).getSignificanceMatrix()(0,0);
-	  covMET[1][0] = (met->front() ).getSignificanceMatrix()(1,0);
-	  covMET[0][1] = (met->front() ).getSignificanceMatrix()(0,1);
-	  covMET[1][1] = (met->front() ).getSignificanceMatrix()(1,1);
-	  std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-	  measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTau->p4()));
-	  measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
-	  NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-	  algo.addLogM(false);
-	  algo.integrateMarkovChain();
-	  if(algo.pt()>0){
+	  TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
+	  math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
+	  TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
+	  m_jetMass=massZ;
+	  m_jetPt=SelectedJet->pt();
+	  m_jetTau21=tau21Z;
+	  m_tauPt=SelectedTau->pt();
+	  m_muonPt=SelectedMuon->pt();
+	  m_metPt=met->begin()->pt();
+	  m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+	  m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+	  m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+	  m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
+	  m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
+	  m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
+	  m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
+	  m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+	  m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+	  m_muonPFIso=MuonPFIso(SelectedMuon,true);
+	  m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+	  m_MassSvfitTauMuo=algo.getMass();
+	  m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
+	  TreeVariable->Fill();
+	  
+	  if(met->begin()->pt()>50
+	     && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4())>2.5 
+	     && ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(), SelectedJet->p4())>2.5
+	     && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4())>0.05
+	     && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4()))<1 
+	     && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4()))<1
+	     && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4()))>2 ){
 	    if(algo.getMass()>20){
 	      
 	      efficiency->Fill(2);
@@ -321,34 +346,9 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      tauDRMet->Fill(ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4()));
 	      muonDRMet->Fill(ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4()));
 	      muonPFIso->Fill(MuonPFIso(SelectedMuon,true));
-	      
-	      TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
 	      ZDRZ->Fill(ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4()));
 	      MassSvfitTauMuo->Fill(algo.getMass());
-	      math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-	      TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
 	      XMassSVFit->Fill((SVFitTauTau+PrunedJet).M());
-
-	      m_jetMass=massZ;
-	      m_jetPt=SelectedJet->pt();
-	      m_jetTau21=tau21Z;
-	      m_tauPt=SelectedTau->pt();
-	      m_muonPt=SelectedMuon->pt();
-	      m_metPt=met->begin()->pt();
-	      m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-	      m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-	      m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
-	      m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
-	      m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
-	      m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
-	      m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
-	      m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
-	      m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
-	      m_muonPFIso=MuonPFIso(SelectedMuon,true);
-	      m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-	      m_MassSvfitTauMuo=algo.getMass();
-	      m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
-	      TreeVariable->Fill();
 	    }
 	  }
 	}
@@ -357,26 +357,51 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
   else{
     if(foundJet && foundTau && foundMuon){
-      if(met->begin()->pt()>50
-	 && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4())>2.5 
-	 && ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(), SelectedJet->p4())>2.5
-	 && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4())>0.05
-	 && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4()))<1 
-	 && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4()))<1
-	 && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4()))>2 ){
 	
-	TMatrixD covMET(2, 2); // PFMET significance matrix
-	covMET[0][0] = (met->front() ).getSignificanceMatrix()(0,0);
-	covMET[1][0] = (met->front() ).getSignificanceMatrix()(1,0);
-	covMET[0][1] = (met->front() ).getSignificanceMatrix()(0,1);
-	covMET[1][1] = (met->front() ).getSignificanceMatrix()(1,1);
-	std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-	measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTau->p4()));
-	measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
-	NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-	algo.addLogM(false);
-	algo.integrateMarkovChain();
-	if(algo.pt()>0){
+      TMatrixD covMET(2, 2); // PFMET significance matrix
+      covMET[0][0] = (met->front() ).getSignificanceMatrix()(0,0);
+      covMET[1][0] = (met->front() ).getSignificanceMatrix()(1,0);
+      covMET[0][1] = (met->front() ).getSignificanceMatrix()(0,1);
+      covMET[1][1] = (met->front() ).getSignificanceMatrix()(1,1);
+      std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
+      measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTau->p4()));
+      measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
+      NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
+      algo.addLogM(false);
+      algo.integrateMarkovChain();
+      if(algo.pt()>0){
+	
+	TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
+	math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
+	TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
+	m_jetMass=massZ;
+	m_jetPt=SelectedJet->pt();
+	m_jetTau21=tau21Z;
+	m_tauPt=SelectedTau->pt();
+	m_muonPt=SelectedMuon->pt();
+	m_metPt=met->begin()->pt();
+	m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+	m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+	m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+	m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
+	m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
+	m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
+	m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
+	m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+	m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+	m_muonPFIso=MuonPFIso(SelectedMuon,true);
+	m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+	m_MassSvfitTauMuo=algo.getMass();
+	m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
+	TreeVariable->Fill();
+
+	if(met->begin()->pt()>50
+	   && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4())>2.5 
+	   && ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(), SelectedJet->p4())>2.5
+	   && ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4())>0.05
+	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4()))<1 
+	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4()))<1
+	   && fabs(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4()))>2 ){
 	  if(algo.getMass()>20){
 	  
 	    efficiency->Fill(1);
@@ -396,33 +421,9 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    muonDPhiMet->Fill(ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4()));
 	    muonDRMet->Fill(ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4()));
 	    muonPFIso->Fill(MuonPFIso(SelectedMuon,true));
-	    TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
 	    ZDRZ->Fill(ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4()));
 	    MassSvfitTauMuo->Fill(algo.getMass());
-	    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-	    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
 	    XMassSVFit->Fill((SVFitTauTau+PrunedJet).M());
-
-	    m_jetMass=massZ;
-	    m_jetPt=SelectedJet->pt();
-	    m_jetTau21=tau21Z;
-	    m_tauPt=SelectedTau->pt();
-	    m_muonPt=SelectedMuon->pt();
-	    m_metPt=met->begin()->pt();
-	    m_jetDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-	    m_jetDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-	    m_jetDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
-	    m_jetDRTau=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),SelectedJet->p4());
-	    m_tauDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTau->p4());
-	    m_tauDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTau->p4());
-	    m_tauDRMuo=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTau->p4());
-	    m_muonDPhiMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
-	    m_muonDRMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
-	    m_muonPFIso=MuonPFIso(SelectedMuon,true);
-	    m_ZDRZ=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-	    m_MassSvfitTauMuo=algo.getMass();
-	    m_XMassSVFit=(SVFitTauTau+PrunedJet).M();
-	    TreeVariable->Fill();
 	  }
 	}
       }
@@ -601,31 +602,31 @@ MuTauAnalyzer::beginJob()
 
   efficiency      = fs->make<TH1D>("efficiency",      "efficiency",      3, -0.5, 2.5);
   jetMass         = fs->make<TH1D>("jetMass",         "jetMass",         400, 0, 200);
-  jetPt           = fs->make<TH1D>("jetPt",           "jetPt",           200, 0, 2000);
+  jetPt           = fs->make<TH1D>("jetPt",           "jetPt",           2000, 0, 2000);
   jetTau21        = fs->make<TH1D>("jetTau21",        "jetTau21",        100, 0, 1);
   jetDRMet        = fs->make<TH1D>("jetDRMet",        "jetDRMet",        100, 0, 5);
   jetDRTau        = fs->make<TH1D>("jetDRTau",        "jetDRTau",        100, 0, 5);
   jetDRMuo        = fs->make<TH1D>("jetDRMuo",        "jetDRMuo",        100, 0, 5);
   jetDPhiMet      = fs->make<TH1D>("jetDPhiMet",      "jetDPhiMet",      100, -5, 5);
-  tauPt           = fs->make<TH1D>("tauPt",           "tauPt",           200, 0, 2000);
+  tauPt           = fs->make<TH1D>("tauPt",           "tauPt",           2000, 0, 2000);
   tauDRMet        = fs->make<TH1D>("tauDRMet",        "tauDRMet",        100, 0, 5);
   tauDRMuo        = fs->make<TH1D>("tauDRMuo",        "tauDRMuo",        100, 0, 5);
   tauDPhiMet      = fs->make<TH1D>("tauDPhiMet",      "tauDPhiMet",      100, -5, 5);
-  muonPt          = fs->make<TH1D>("muonPt",          "muonPt",          200, 0, 2000);
+  muonPt          = fs->make<TH1D>("muonPt",          "muonPt",          2000, 0, 2000);
   muonDRMet       = fs->make<TH1D>("muonDRMet",       "muonDRMet",       100, 0, 5);
   muonDPhiMet     = fs->make<TH1D>("muonDPhiMet",     "muonDPhiMet",     100, -5, 5);
   muonPFIso       = fs->make<TH1D>("muonPFIso",       "muonPFIso",       500, 0, 5);
-  metPt           = fs->make<TH1D>("metPt",           "metPt",           200, 0, 2000);
+  metPt           = fs->make<TH1D>("metPt",           "metPt",           2000, 0, 2000);
   ZDRZ            = fs->make<TH1D>("ZDRZ",            "ZDRZ",            100, 0, 5);
   MassSvfitTauMuo = fs->make<TH1D>("MassSvfitTauMuo", "MassSvfitTauMuo", 500, 0, 500);
   XMassSVFit      = fs->make<TH1D>("XMassSVFit",      "XMassSVFit",      300, 0, 3000);
 
-  jetPtNO           = fs->make<TH1D>("jetPtNO",           "jetPtNO",           200, 0, 2000);
+  jetPtNO           = fs->make<TH1D>("jetPtNO",           "jetPtNO",           2000, 0, 2000);
   jetMassNO         = fs->make<TH1D>("jetMassNO",         "jetMassNO",         400, 0, 200);
   jetTau21NO        = fs->make<TH1D>("jetTau21NO",        "jetTau21NO",        100, 0, 1);
-  tauPtNO           = fs->make<TH1D>("tauPtNO",           "tauPtNO",           200, 0, 2000);
-  muonPtNO          = fs->make<TH1D>("muonPtNO",          "muonPtNO",          200, 0, 2000);
-  metPtNO           = fs->make<TH1D>("metPtNO",           "metPtNO",           200, 0, 2000);
+  tauPtNO           = fs->make<TH1D>("tauPtNO",           "tauPtNO",           2000, 0, 2000);
+  muonPtNO          = fs->make<TH1D>("muonPtNO",          "muonPtNO",          2000, 0, 2000);
+  metPtNO           = fs->make<TH1D>("metPtNO",           "metPtNO",           2000, 0, 2000);
   jetDPhiMetNO      = fs->make<TH1D>("jetDPhiMetNO",      "jetDPhiMetNO",      100, -5, 5);
   muonDPhiMetNO     = fs->make<TH1D>("muonDPhiMetNO",     "muonDPhiMetNO",     100, -5, 5);
   tauDPhiMetNO      = fs->make<TH1D>("tauDPhiMetNO",      "tauDPhiMetNO",      100, -5, 5);

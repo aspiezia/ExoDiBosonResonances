@@ -10,7 +10,7 @@
 
   using namespace std;
 
-  vector<TString> name;                                 vector<int> RebinFactor; 
+  vector<TString> name;                                 vector<int> RebinFactor;
   name.push_back("metPt");                              RebinFactor.push_back(10);
   name.push_back("metPtSelected");			RebinFactor.push_back(10);
   name.push_back("NJetSelected");			RebinFactor.push_back(1);
@@ -59,43 +59,22 @@
   name.push_back("muonDR");				RebinFactor.push_back(10);
   name.push_back("muonPtLead");				RebinFactor.push_back(10);
   name.push_back("muonEtaLead");			RebinFactor.push_back(10);
-  name.push_back("muonChi2Lead");			RebinFactor.push_back(1);
-  name.push_back("muonValidMuonHitsLead");		RebinFactor.push_back(1);
-  name.push_back("muonMatchesLead");                    RebinFactor.push_back(1);
-  name.push_back("muondBLead");				RebinFactor.push_back(1);
-  name.push_back("muondZLead");				RebinFactor.push_back(1);
-  name.push_back("muonPixelHitsLead");			RebinFactor.push_back(1);
-  name.push_back("muonLayersLead");			RebinFactor.push_back(1);
   name.push_back("muonDRMetLead");			RebinFactor.push_back(1);
   name.push_back("muonDPhiMetLead");			RebinFactor.push_back(1);
   name.push_back("muonPtSublead");			RebinFactor.push_back(10);
   name.push_back("muonEtaSublead");			RebinFactor.push_back(10);
-  name.push_back("muonChi2Sublead");			RebinFactor.push_back(1);
-  name.push_back("muonValidMuonHitsSublead");		RebinFactor.push_back(1);
-  name.push_back("muonMatchesSublead");			RebinFactor.push_back(1);
-  name.push_back("muondBSublead");			RebinFactor.push_back(1);
-  name.push_back("muondZSublead");			RebinFactor.push_back(1);
-  name.push_back("muonPixelHitsSublead");		RebinFactor.push_back(1);
-  name.push_back("muonLayersSublead");			RebinFactor.push_back(1);
   name.push_back("muonDRMetSublead");			RebinFactor.push_back(1);
   name.push_back("muonDPhiMetSublead");			RebinFactor.push_back(1);
   name.push_back("muonPtEMU");				RebinFactor.push_back(10);
   name.push_back("muonEtaEMU");				RebinFactor.push_back(10);
-  name.push_back("muonChi2EMU");			RebinFactor.push_back(1);
-  name.push_back("muonValidMuonHitsEMU");               RebinFactor.push_back(1);
-  name.push_back("muonMatchesEMU");			RebinFactor.push_back(1); //70
-  name.push_back("muondBEMU");				RebinFactor.push_back(1);
-  name.push_back("muondZEMU");				RebinFactor.push_back(1);
-  name.push_back("muonPixelHitsEMU");			RebinFactor.push_back(1);
-  name.push_back("muonLayersEMU");			RebinFactor.push_back(1);
   name.push_back("muonDRMetEMU");			RebinFactor.push_back(1);
   name.push_back("muonDPhiMetEMU");			RebinFactor.push_back(1);
   name.push_back("electronDR");				RebinFactor.push_back(4);
   name.push_back("electronPtLead");			RebinFactor.push_back(10);
+  name.push_back("electronPtSublead");			RebinFactor.push_back(10);
   name.push_back("electronEtaLead");			RebinFactor.push_back(10);
   name.push_back("electronDRMetLead");			RebinFactor.push_back(1);
   name.push_back("electronDPhiMetLead");		RebinFactor.push_back(1);
-  name.push_back("electronPtSublead");			RebinFactor.push_back(10);
   name.push_back("electronEtaSublead");			RebinFactor.push_back(10);
   name.push_back("electronDRMetSublead");		RebinFactor.push_back(1);
   name.push_back("electronDPhiMetSublead");		RebinFactor.push_back(1);
@@ -116,21 +95,20 @@
   name.push_back("muonDetIsoSublead");			RebinFactor.push_back(10);
   name.push_back("muonPFIsoLead");			RebinFactor.push_back(10);
 
-
   int rebin = 10;
   
-  TFile *f11= new TFile("../ROOT/BulkGM1000_v9.root");
-  TFile *f12= new TFile("../ROOT/BulkGM1500_v9.root");
-  TFile *f13= new TFile("../ROOT/BulkGM2000_v9.root");
-  TFile *f2 = new TFile("../ROOT/DYJetsToLL_PtZ-100_v9.root");
-  TFile *f3 = new TFile("../ROOT/DYJetsToLL_PtZ-70To100_v9.root");
-  TFile *f4 = new TFile("../ROOT/TT_v9.root");
-  TFile *f5 = new TFile("../ROOT/WW_v9.root");
-  TFile *f6 = new TFile("../ROOT/WZ_v9.root");
-  TFile *f7 = new TFile("../ROOT/ZZ_v9.root");
-  TFile *f8 = new TFile("../ROOT/WJetsPt50To70_v8.root");
-  TFile *f9 = new TFile("../ROOT/WJetsPt70To100_v8.root");
-  TFile *f0 = new TFile("../ROOT/WJetsPt100_v8.root");
+  TFile *f11= new TFile("../BulkGM1000FullyLep.root");
+  TFile *f12= new TFile("../BulkGM1500FullyLep.root");
+  TFile *f13= new TFile("../BulkGM2000FullyLep.root");
+  TFile *f2 = new TFile("../DYJetsToLL100FullyLep.root");
+  TFile *f3 = new TFile("../DYJetsToLL70To100FullyLep.root");
+  TFile *f4 = new TFile("../TTFullyLep.root");
+  TFile *f5 = new TFile("../WWFullyLep.root");
+  TFile *f6 = new TFile("../WZFullyLep.root");
+  TFile *f7 = new TFile("../ZZFullyLep.root");
+  TFile *f8 = new TFile("../ROOT/fullylep/WJetsPt50To70_v8.root");
+  TFile *f9 = new TFile("../ROOT/fullylep/WJetsPt70To100_v8.root");
+  TFile *f0 = new TFile("../ROOT/fullylep/WJetsPt100_v8.root");
   
   for(int i=0; i<name.size(); i++){
     TCanvas * c1 = new TCanvas("c1", "c1", 800, 600);
@@ -151,9 +129,9 @@
     TH1F *WJetsPt70To100;          WJetsPt70To100 = (TH1F*) f9->Get("demo/"+name[i]);
     TH1F *WJetsPt100;              WJetsPt100 = (TH1F*) f0->Get("demo/"+name[i]);
     
-    BulkGM1000->Scale(19.6*0.0000851*1000*1000/(2*131716));
-    BulkGM1500->Scale(19.6*0.0000044*1000*20000/(2*124273));
-    BulkGM2000->Scale(19.6*0.0000004*1000*200000/(2*121429));
+    BulkGM1000->Scale(19.6*0.0000851*1000*300/(2*131716));
+    BulkGM1500->Scale(19.6*0.0000044*1000*5000/(2*124273));
+    BulkGM2000->Scale(19.6*0.0000004*1000*50000/(2*121429));
     DYJetsToLL_PtZ70To100->Scale(19.6*62.9*1000/11764538);
     DYJetsToLL_PtZ100->Scale(19.6*39.1*1000/12511326);
     TT->Scale(19.6*225.197*1000/21675970.);
@@ -211,7 +189,7 @@
     hs->Add(WW);
     hs->Add(WZ);
     hs->Add(ZZ);
-    hs->Add(WJetsPt50To70);
+    //hs->Add(WJetsPt50To70);
     
     hs->Draw();
     hs->GetYaxis()->SetTitleOffset(0.80);
@@ -220,6 +198,7 @@
     hs->GetYaxis()->SetLabelSize(0.045);
     hs->GetXaxis()->SetLabelSize(0.045);
     hs->GetYaxis()->SetTitleOffset(1.1);   
+    //hs->GetXaxis()->SetRangeUser(0,500);
     BulkGM1000->Draw("same");   
     BulkGM1500->Draw("same");   
     BulkGM2000->Draw("same");
@@ -235,9 +214,9 @@
     TLegend *pl = new TLegend(0.49,0.58,0.89,0.84);
     pl->SetTextSize(0.025); 
     pl->SetFillColor(0);
-    TLegendEntry *ple = pl->AddEntry(BulkGM1000, "Bulk G (M=1000 GeV, #tilde{k}=0.2 (x 1000))",  "L");
-    TLegendEntry *ple = pl->AddEntry(BulkGM1500, "Bulk G (M=1500 GeV, #tilde{k}=0.2 (x 20000))",  "L");
-    TLegendEntry *ple = pl->AddEntry(BulkGM2000, "Bulk G (M=2000 GeV, #tilde{k}=0.2 (x 200000))",  "L");
+    TLegendEntry *ple = pl->AddEntry(BulkGM1000, "Bulk G (M=1000 GeV, #tilde{k}=0.2 (x 300))",  "L");
+    TLegendEntry *ple = pl->AddEntry(BulkGM1500, "Bulk G (M=1500 GeV, #tilde{k}=0.2 (x 5000))",  "L");
+    TLegendEntry *ple = pl->AddEntry(BulkGM2000, "Bulk G (M=2000 GeV, #tilde{k}=0.2 (x 50000))",  "L");
     ple = pl->AddEntry(DYJetsToLL_PtZ100, "DYJetsToLL_PtZ100",  "F"); 
     ple = pl->AddEntry(DYJetsToLL_PtZ70To100, "DYJetsToLL_PtZ70To100",  "F"); 
     ple = pl->AddEntry(TT, "TT",  "F"); 
@@ -251,11 +230,11 @@
     if(i>=13 && i<=16) hs->SetMaximum(3.0);
     if(i>=17 && i<=20) hs->SetMaximum(6.0);
     if(i>=21 && i<=24) hs->SetMaximum(5.0);
-    if(i>=25 && i<=36) hs->SetMaximum(5.0);
+    if(i>=25 && i<=36) hs->SetMaximum(1.5);
 
     if(i<90) hs->SetMinimum(0);
     if(i>=90) c1->SetLogy();
-    c1->SaveAs(name[i]+".png");
+    c1->SaveAs("FL_SS_"+name[i]+".png");
   }
     
     TCanvas * c1 = new TCanvas("c1", "c1", 800, 600);
@@ -332,7 +311,7 @@
     ple = pl->AddEntry(BulkGM2000NumSel, "Bulk G (M=2000 GeV, #tilde{k}=0.2)",  "L"); 
     pl->Draw();
 
-    c1->SaveAs("tauDecaySelected.png");
+    c1->SaveAs("FL_SS_tauDecaySelected.png");
 
 
 }
