@@ -42,7 +42,6 @@
 #include "TauAnalysis/CandidateTools/interface/NSVfitStandaloneAlgorithm.h"
 #include "DataFormats/MuonReco/interface/MuonCocktails.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
-#include "EgammaAnalysis/ElectronTools/interface/EGammaMvaEleEstimator.h"
 
 //
 // class declaration
@@ -71,7 +70,6 @@ private:
   float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
   bool  ElectronDETIso(pat::ElectronCollection::const_iterator electron, float rho);
 
-  EGammaMvaEleEstimator* myMVANonTrig;
  
   //HISTOGRAMS
   TH1D* eleTight; TH1D* eleMedium; TH1D* eleLoose;

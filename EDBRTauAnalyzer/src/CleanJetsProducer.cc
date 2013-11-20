@@ -141,7 +141,14 @@ CleanJetsProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       
       if (pfCand.particleId() == 3){ //the PFCandidate is a muon
 	reco::MuonRef theRecoMuon = pfCand.muonRef();
-	if(muon::isSoftMuon(*theRecoMuon, primaryVertex) && theRecoMuon->pt()>5){
+	if(theRecoMuon->pt()>5
+	   && muon::isGoodMuon(*theRecoMuon ,muon::TMOneStationTight)==true
+	   && theRecoMuon->innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5
+	   && theRecoMuon->innerTrack()->hitPattern().pixelLayersWithMeasurement() > 1
+	   && theRecoMuon->innerTrack()->normalizedChi2() < 1.8
+	   && fabs(theRecoMuon->innerTrack()->dxy(primaryVertex.position())) < 3. 
+	   && fabs(theRecoMuon->innerTrack()->dz(primaryVertex.position())) < 30.){
+	  //if(muon::isSoftMuon(*theRecoMuon, primaryVertex) && theRecoMuon->pt()>5){
 	  //cout<<iJet->pt()<<" "<<theRecoMuon->pt()<<endl;
 	  specs.mMuonEnergy -= pfCand.p4().e();
 	  specs.mMuonMultiplicity -= 1;

@@ -42,7 +42,6 @@ Implementation:
 #include "TauAnalysis/CandidateTools/interface/NSVfitStandaloneAlgorithm.h"
 #include "DataFormats/MuonReco/interface/MuonCocktails.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
-#include "EgammaAnalysis/ElectronTools/interface/EGammaMvaEleEstimator.h"
 
 //
 // class declaration
@@ -70,8 +69,6 @@ private:
   void SelectElectronCutBased(edm::Handle<pat::ElectronCollection> eleH, std::vector<pat::ElectronCollection::const_iterator> & SelectedEle, int & Nele, float rho, reco::Vertex primaryVertex);
   float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
   bool  ElectronDETIso(pat::ElectronCollection::const_iterator electron, float rho);
-
-  EGammaMvaEleEstimator* myMVANonTrig;
  
   //HISTOGRAMS
   TH1D* eleTight;
