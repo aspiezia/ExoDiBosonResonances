@@ -42,7 +42,6 @@
 #include "TauAnalysis/CandidateTools/interface/NSVfitStandaloneAlgorithm.h"
 #include "DataFormats/MuonReco/interface/MuonCocktails.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
-#include "EgammaAnalysis/ElectronTools/interface/EGammaMvaEleEstimator.h"
 
 //
 // class declaration
