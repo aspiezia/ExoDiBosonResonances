@@ -9,7 +9,8 @@ Dijet-like fit
    - Make sure the latest version of "combine" (HiggsAnalysis/CombinedLimit) 
      is uploaded and compiled. 
      See https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideHiggsAnalysisCombinedLimit 
-     NOTE: the following code has been tested in CMSSW_5_3_3_patch3 and CMSSW_5_3_7
+     NOTE: the following code has been tested in CMSSW_5_3_3_patch3 and CMSSW_5_3_7 with V02-07-00
+     NOTE: the following code has been tested in CMSSW_5_3_9 with V02-07-03
      NOTE1: need to load lib (see below under R2JJFitter.cc)
 
 1) Make fits and workspaces
@@ -98,7 +99,7 @@ Dijet-like fit
   - Edit: plot_Significance.C
     -   TFile *fexp=new TFile("higgsCombineEXOZZExpSignif.ProfileLikelihood.TOTAL.root","READ");
     -   TFile *fobs=new TFile("higgsCombineEXOZZObsSignif.ProfileLikelihood.TOTAL.root","READ");
-    -   XMIN=1000; XMAX=2500;
+    -   XMIN=800; XMAX=2500;
 
   - Run : 
     root -b 
@@ -157,6 +158,7 @@ Dijet-like fit
       - wAll->factory(TString::Format("CMS_hgg_bkg_8TeV_slope3_cat%d[%g,%g,%g]", c, mean, mean, mean)); //P3 fixed
     - MakeDataCard_1Channel
       - ScaleFactorSignal
+      - Change systematics if needed
 
 
 [2] Things to fix/check

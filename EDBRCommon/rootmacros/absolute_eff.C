@@ -9,6 +9,8 @@
 #include <fstream>
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TGraphErrors.h"
+#include "TLegend.h"
 using namespace std;
 
 double deltaPhi(const double& phi1, const double& phi2)
@@ -40,11 +42,8 @@ double deltaR(const double& eta1, const double& phi1,
 void absolute_eff()
 {
 
-  //TString inputpath = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv7_newMJ/fullallrange";
-  //TString inputpath = "/afs/cern.ch/user/b/bonato/work/PhysAnalysis/EXOVV_2012/analyzer_trees/productionv1e/fullsig/";
-  ///afs/cern.ch/user/t/tomei/work/public/EXOVV_2012/analyzer_trees/productionv5/fullsigCA8/";
-  //TString inputpath = "/afs/cern.ch/work/s/santanas/public/EXOVV_2012/ntuples/WW_02_05_2013_ForUnblinding/fullallrange/";
-  TString inputpath = "/afs/cern.ch/user/b/bonato/scratch0/PhysAnalysis/EXOVV_2012/analyzer_trees/productionv2c/fullsig/";
+  //	TString inputpath = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv12/fullrange/";
+  TString inputpath = "/afs/cern.ch/user/b/bonato/scratch0/PhysAnalysis/EXOVV_2012/analyzer_trees/productionv2i/fullsig/";
   TString cut = "absolute_efficiency";
   vector<TString> dataSamples;
   vector<TString> bkgSamples;
@@ -65,8 +64,8 @@ void absolute_eff()
   double lumi=1;
 
   //system("rm -rf SignalEffPlots");   
-  system("mkdir -p SignalEffPlots");
-  ofstream outFile("SignalEffPlots/efficiencies_MCSig.txt");
+  system("mkdir -p SignalEffPlots_RS1PYTHIA");
+  ofstream outFile("SignalEffPlots_RS1PYTHIA/efficiencies_MCSig.txt");
   //outFile<<"Mass	EE1JHP	MM1JHP	EE1JLP	MM1JLP	EE2J	MM2J"<<endl;
   /*
     dataSamples.push_back("SingleMu_Run2012A_13Jul2012_xww");
@@ -78,14 +77,37 @@ void absolute_eff()
   */
   if(isZZChannel)
     {
-      bkgSamples.push_back("TTBARpowheg");  
-      bkgSamples.push_back("WW");
-      bkgSamples.push_back("WZ");
-      bkgSamples.push_back("ZZ");
+//      bkgSamples.push_back("TTBARpowheg");  
+ //     bkgSamples.push_back("WW");
+   //   bkgSamples.push_back("WZ");
+     // bkgSamples.push_back("ZZ");
       // bkgSamples.push_back("DYJetsPt50To70");
-      bkgSamples.push_back("DYJetsPt70To100");
-      bkgSamples.push_back("DYJetsPt100");
+      //		bkgSamples.push_back("DYJetsPt70To100");
+      //bkgSamples.push_back("DYJetsPt100");
 
+
+      /*
+      sigSamples.push_back("WprimeWZ_inclusive_M750_PYTHIA6");
+      sigSamples.push_back("WprimeWZ_inclusive_M1000_PYTHIA6");
+      sigSamples.push_back("WprimeWZ_inclusive_M1500_PYTHIA6");
+      sigSamples.push_back("WprimeWZ_inclusive_M2000_PYTHIA6");
+      sigSamples.push_back("WprimeWZ_inclusive_M2200_PYTHIA6");
+      sigSamples.push_back("WprimeWZ_inclusive_M2500_PYTHIA6");
+      */
+     
+      
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M750_PYTHIA6");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M1000_PYTHIA6");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M1250_PYTHIA6");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M1500_PYTHIA6");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M1750_PYTHIA6");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p05_M2000_PYTHIA6");
+     	 sigSamples.push_back("RSG_ZZ_lljj_c0p05_M1000");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p2_M1000");
+      sigSamples.push_back("RSG_ZZ_lljj_c0p2_M1500");
+      
+
+      /*
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M600");
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M700");
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M800");
@@ -106,6 +128,28 @@ void absolute_eff()
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M2300");
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M2400");
       sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M2500");
+      
+
+      sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M700");
+      sigSamples.push_back("BulkG_ZZ_lljj_M700_G40");
+      sigSamples.push_back("BulkG_ZZ_lljj_M700_G80");
+      sigSamples.push_back("BulkG_ZZ_lljj_M700_G120");
+      sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M1000");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1000_G40");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1000_G80");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1000_G120");
+      sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M1500");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1500_G40");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1500_G80");
+      sigSamples.push_back("BulkG_ZZ_lljj_M1500_G120");
+      sigSamples.push_back("BulkG_ZZ_lljj_c0p2_M2000");
+      sigSamples.push_back("BulkG_ZZ_lljj_M2000_G40");
+      sigSamples.push_back("BulkG_ZZ_lljj_M2000_G80");
+      sigSamples.push_back("BulkG_ZZ_lljj_M2000_G120");
+      sigSamples.push_back("BulkG_ZZ_lljj_M2000_G160");
+      sigSamples.push_back("BulkG_ZZ_lljj_M2000_G200");
+      */
+
     }
 
   if(!isZZChannel)
@@ -126,30 +170,47 @@ void absolute_eff()
       //     bkgSamples.push_back("DYJetsPt50To70_xww");
       //     bkgSamples.push_back("DYJetsPt70To100_xww");
       //     bkgSamples.push_back("DYJetsPt100_xww");
+	  	
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M600_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M700_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M800_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M900_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1000_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1100_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1200_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1300_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1400_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1500_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1600_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1700_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1800_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M1900_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2000_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2100_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2200_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2300_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2400_xww");
+      sigSamples.push_back("BulkG_WW_inclusive_c0p2_M2500_xww");
+	
+      /*
+	  sigSamples.push_back("WprimeWZ_inclusive_M750_PYTHIA6_xww");
+	  sigSamples.push_back("WprimeWZ_inclusive_M1000_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M1500_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M1800_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M2000_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M2200_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M2500_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M3000_PYTHIA6_xww");
+      sigSamples.push_back("WprimeWZ_inclusive_M4000_PYTHIA6_xww");
 
-      //sigSamples.push_back("RSG_WW_lvjj_c0p2_M600_xww");
-      //sigSamples.push_back("RSG_WW_lvjj_c0p2_M1000_xww");
-      //sigSamples.push_back("RSG_WW_lvjj_c0p2_M1500_xww"); 
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M600_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M700_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M800_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M900_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1000_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1100_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1200_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1300_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1400_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1500_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1600_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1700_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1800_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M1900_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2000_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2100_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2200_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2300_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2400_xww");
-      sigSamples.push_back("BulkG_WW_lvjj_c0p2_M2500_xww");
+	  sigSamples.push_back("RSG_WW_lvjj_c0p05_M750_PYTHIA6_xww");
+      sigSamples.push_back("RSG_WW_lvjj_c0p05_M1000_PYTHIA6_xww");
+      sigSamples.push_back("RSG_WW_lvjj_c0p05_M1250_PYTHIA6_xww");
+      sigSamples.push_back("RSG_WW_lvjj_c0p05_M1500_PYTHIA6_xww");
+      sigSamples.push_back("RSG_WW_lvjj_c0p05_M1750_PYTHIA6_xww");
+      sigSamples.push_back("RSG_WW_lvjj_c0p05_M2000_PYTHIA6_xww");
+	  */
+ 
     }
   const int nCat=6;//EE1JHP, MM1JHP, EE1JLP, MM1JLP, EE2J, MM2J
   const int ndata = dataSamples.size();
@@ -157,8 +218,15 @@ void absolute_eff()
   const int nsig  = sigSamples.size();
 
   double SigEff[nsig][nCat];
+  double SigNgen[nsig][nCat];
   int isig=0;
   int iCat=0;
+
+  for(int i=0;i<nsig;i++){
+    for(int j=0;j<nCat;j++){
+      SigNgen[i][j]=0.0;
+    }
+  }
 
   //order of categories:EE1JHP, MM1JHP, EE1JLP, MM1JLP, EE2J, MM2J
   for(int iNJ=1;iNJ<=2;iNJ++){
@@ -172,7 +240,7 @@ void absolute_eff()
 
 
 	std::vector<double> sig_effs, sig_masses;
-
+	cout<<"NJets="<<iNJ<<"   "<<(ilep==0? "ELE" : "MU")<<"   "<<(iPur==0 ? "LP" : "HP")<<endl;
 	cout<<"data samples "<<ndata<<"  bkg samples "<<nbkg<<"  signal samples "<<nsig<<endl;	
 
 	TH1F * h1 = new TH1F (cut,cut,ndata+nbkg+nsig,0,ndata+nbkg+nsig);
@@ -186,7 +254,11 @@ void absolute_eff()
 	TCanvas * c1 = new TCanvas();	
 
 	int indM=0;
-	double startM=600.0; double step=100.0;
+	double startM=750.0; double step=250.0;
+	if(!isZZChannel){
+		startM=600.0; 
+		step=100.0;
+	}
 	isig=0;
 	for(int i =0; i<ndata+nbkg+nsig; i++   )
 	  {
@@ -208,10 +280,14 @@ void absolute_eff()
 	    else if(i>=(ndata+nbkg)) 
 	      {
 		filename = "treeEDBR_"+sigSamples.at(i-ndata-nbkg)+".root";
-		samplename = sigSamples.at(i-ndata-nbkg);//RSG_WW_lvjj_c0p2_M1500_xww,BulkG_WW_lvjj_c1p0_M1500_xww
-		if(!isZZChannel)samplename.Remove(samplename.Length()-4,4);//RSG_WW_lvjj_c0p2_M1500,BulkG_WW_lvjj_c1p0_M1500
-		if(samplename.Contains("RSG"))samplename.Remove(4,8);//RSG_c0p2_M1500
-		if(samplename.Contains("BulkG"))samplename.Remove(6,8);//BulkG_c1p0_M1500
+		samplename = sigSamples.at(i-ndata-nbkg);//RSG_WW_inclusive_c0p2_M1500_xww,BulkG_WW_inclusive_c1p0_M1500_xww
+		if(!isZZChannel){
+		  //this removes "_xww"
+		  samplename.Remove(samplename.Length()-4,4);//RSG_WW_inclusive_c0p2_M1500,BulkG_WW_inclusive_c1p0_M1500
+		  //this removes "WW_inclusive_"
+		  if(samplename.Contains("RSG"))samplename.Remove(4,13);//RSG_c0p2_M1500
+		  if(samplename.Contains("BulkG"))samplename.Remove(6,13);//BulkG_c1p0_M1500
+		}
 	      }
 	    cout<<"\n\n----------------------"<<endl;
 	    cout<<filename<<endl;
@@ -292,7 +368,7 @@ void absolute_eff()
 	    tree->SetBranchAddress("lep", lep);
 	    tree->SetBranchAddress("vTagPurity", vtag);
 	    tree->SetBranchAddress("nCands", &nCands);
-					
+
 	    tree->SetBranchAddress("weight", &TOTweight);
 	    tree->SetBranchAddress("HLTweight", &HLTweight);
 	    tree->SetBranchAddress("PUweight", &PUweight);
@@ -314,6 +390,12 @@ void absolute_eff()
 		    total = Ngen;
 		    crossSection = xsec;
 		  }
+
+		if(total==0){//something wrong with this sample
+		  cout<<samplename<<"  has "<<Ngen<<" generated events. Skipping sample"<<endl;
+		  break;
+		}
+
 
 		//per event weight
 		double actualWeight = TOTweight; //HLTweight*PUweight*LumiWeight*GenWeight*lumi;
@@ -353,14 +435,14 @@ void absolute_eff()
 			  //if(ptZll[ivec]<200)continue;
 			  if(nbtagsM[ivec]!=0)continue; //b-tag veto
 			  if(deltaR_LJ<1.57 || deltaPhi_JMET<2. || deltaPhi_JWL<2.)continue;
-									
+
 			  if(lepCut==0)
 			    {
 			      if(met<80)continue;//for electron, use this cut
 			      //if(eleid_passConversionVeto[ivec]!=1)continue;
 			      //if(eleid_numberOfLostHits[ivec]!=0)continue;
 			    }
-									
+
 
 			}
 		      pass+=actualWeight;
@@ -384,41 +466,69 @@ void absolute_eff()
 
 	    cout<<"crossSection: "<<crossSection<<" total: "<<total<<" pass: "<<pass<<" eff: "<<eff<<endl;
 
+	    double BR_sf=1.0;
 
-	    h1->Fill(samplename,eff);	
-
-	    if(samplename.Contains("BulkG")){
+	    if(samplename.Contains("BulkG") || samplename.Contains("RSG") || samplename.Contains("WprimeWZ") ){
 	      int binToFill=h1b->FindBin(indM*step+startM);
 	      cout<<"Filling IndM="<<indM<<"  M="<<indM*step+startM<<"  Bin#"<<binToFill<<"  Eff="<<eff<<endl;
-	      h1b->SetBinContent(binToFill,eff);
+	    
+	      if(samplename.Contains("lljj") ||samplename.Contains("lvjj") ){
+		BR_sf=1.0;
+		if(samplename.Contains("RSG")&&samplename.Contains("PYTHIA")){//taus are also in !
+		  BR_sf=2.0/3.0;
+		}
+	      }//end if samplename.Contains("lljj")
+	      else if(samplename.Contains("inclusive")){
+		if(isZZChannel){
+		  BR_sf=0.0941;
+		  if(samplename.Contains("WprimeWZ")) BR_sf=0.0452;
+		}
+		else{//WW ->lv qq branching ratios
+		  BR_sf=0.2877;
+		  if(samplename.Contains("WprimeWZ")) BR_sf=0.1386; // BR(W->lv) * BR(Z->qq) = (0.105+0.105) * 0.66 
+		}
+	      }//end if (samplename.Contains("inclusive")){
+	      else {
+		cout<<"\nWARNING !!! Impossible to identify the process of the signal from the sample name: "<<samplename<<" -> assuming full chain llqq with l=e or mu ."<<endl;
+		BR_sf=1.0;
+	      }
+
+	      h1b->SetBinContent(binToFill,eff/BR_sf);
 	      sig_masses.push_back(indM*step+startM);
-	      sig_effs.push_back(eff);
+	      sig_effs.push_back(eff/BR_sf);
 	      indM++;
 
 	      cout<<"Array indexes: "<<isig<<"  "<<iCat<<endl;
-	      SigEff[isig][iCat]=eff;
+	      SigEff[isig][iCat]=eff/BR_sf;
+	      SigNgen[isig][iCat]=Ngen;//last entry will be used, should be ok because always the same 
 	      isig++;
 	      if(isig==nsig){//finished last sample
 		iCat++;
 	      }
-	    }
+	    }//end if sample name is a signal sample name
+
+	    h1->Fill(samplename,eff);	
 	  }//end of sample loop
 
 	c1->SetGridy(1);
 
 	/// Here you choose the functional form of the efficiency.
 	/// You have to be careful with the initial values of the parameters...
-	TF1 *fitFunc = new TF1("fitPoly2","tanh([0]*(x-[1]))*([2]+[3]*x)",580,2550);
-	fitFunc->SetLineColor(kRed);
-	fitFunc->SetLineWidth(2);
-	fitFunc->SetParameter(0,-0.002);
-	fitFunc->SetParameter(1,300);
-	fitFunc->SetParameter(2,-0.3);
-	fitFunc->SetParameter(3,3E-5);
-	fitFunc->SetLineColor(kRed);
-	h1b->Fit(fitFunc,"R");
-
-	cout<<"\n\nEff extrapolated at 2000 GeV: "<<fitFunc->Eval(2000.0)<<endl;
+	bool fitEff=false;
+	TF1 *fitFunc = 0;
+	if(fitEff){
+	  fitFunc = new TF1("fitPoly2","tanh([0]*(x-[1]))*([2]+[3]*x)",580,2550);
+	  fitFunc->SetLineColor(kRed);
+	  fitFunc->SetLineWidth(2);
+	  fitFunc->SetParameter(0,-0.002);
+	  fitFunc->SetParameter(1,300);
+	  fitFunc->SetParameter(2,-0.3);
+	  fitFunc->SetParameter(3,3E-5);
+	  fitFunc->SetLineColor(kRed);
+	  h1b->Fit(fitFunc,"R");
+	  
+	  cout<<"\n\nEff extrapolated at 2000 GeV: "<<fitFunc->Eval(2000.0)<<endl;
+	}
 
 	TString lepStr;
 	if(lepCut==1)lepStr="MU";
@@ -446,9 +556,9 @@ void absolute_eff()
 	h1b->SetMinimum(0.0);
 	h1b->SetMaximum(0.25);
 	h1b->Draw("P");
-	fitFunc->Draw("Lsame");
-	c2->SaveAs("SignalEffPlots/efficiencyAndFit"+SaveName+".png");
-	c2->SaveAs("SignalEffPlots/efficiencyAndFit"+SaveName+".pdf");
+	if(fitEff)fitFunc->Draw("Lsame");
+	c2->SaveAs("SignalEffPlots_RS1PYTHIA/efficiencyAndFit"+SaveName+".png");
+	c2->SaveAs("SignalEffPlots_RS1PYTHIA/efficiencyAndFit"+SaveName+".pdf");
 
 	cout<<"data samples "<<ndata<<"  bkg samples "<<nbkg<<"  signal samples "<<nsig<<endl;	
 	cout<<"\nEfficiencies for Lep="<<lepCut<<"  nXjets="<<nxjCut<<" : "<<endl;
@@ -459,6 +569,7 @@ void absolute_eff()
     }//end of purity loop
   }//end of nxjCut loop
 
+  /*
   for(int is =0; is<nsig; is++)
     {
       double MAss = 600+100*is;
@@ -469,4 +580,153 @@ void absolute_eff()
 	}
       outFile<<endl;
     }
-}
+  */
+
+
+  /*
+  for(int is =0; is<nsig; is++)
+    {
+      double MAss = 600+100*is;
+      if(is<4)outFile<<"700";
+      else if(is<8)outFile<<"1000";
+      else if(is<12)outFile<<"1500";
+      else outFile<<"2000"; 
+      for(int ic=0;ic<nCat; ic++)
+	{
+	  outFile<<"		"<<SigEff[is][ic];
+	}
+      outFile<<endl;
+
+    }//end loop on samples
+
+
+  TGraphErrors *grEff[4];
+  for(int ic=0;ic<nCat; ic++){
+
+    const  int nPmax=6;
+    double width[nPmax]={0.0,40.0,80,120.0,160.0,200.0};
+    double eff[4][nPmax], effErr[4][nPmax];
+    
+    string catLab="dummy";
+    if(ic==0)catLab="EEHP";
+    else if(ic==1)catLab="MMHP";
+    else if(ic==2)catLab="EELP";
+    else if(ic==3)catLab="MMLP";
+    else catLab="dummyDUMMY";
+
+    //    int iP=0;
+    for(int is =0; is<nsig; is++)
+      {
+	
+	double effTMP=SigEff[is][ic];
+	if(is==2)effTMP*=(10698.0/8024.0);//M1500 G80 has less processed events
+	if(is==10)effTMP*=(10692.0/5346.0);//M1500 G80 has less processed events
+	double errTMP=sqrt((effTMP*(1.0-effTMP))/SigNgen[is][ic]);
+	if(is<4){
+	  eff[0][is]=effTMP;
+	  effErr[0][is]=errTMP;
+	}
+	else if(is<8){
+	  eff[1][is-4]=effTMP;
+	  effErr[1][is-4]=errTMP;
+	}
+	else if(is<12){
+	  eff[2][is-8]=effTMP;
+	  effErr[2][is-8]=errTMP;
+	}
+	else {
+	  eff[3][is-12]=effTMP;
+	  effErr[3][is-12]=errTMP;
+	}
+
+      }//end loop on samples
+
+
+
+    grEff[0]=new TGraphErrors(4,width,eff[0],0,effErr[0]);
+    grEff[0]->SetName(("grEff_vs_Width_M700_"+catLab).c_str());
+    grEff[0]->SetMarkerSize(1.5);
+    grEff[0]->SetMarkerColor(kBlack);
+    grEff[0]->SetMarkerStyle(20);
+    grEff[0]->GetXaxis()->SetTitle("Natural Width [GeV]");
+    grEff[0]->GetYaxis()->SetTitle("Efficiency");
+
+    grEff[1]=new TGraphErrors(4,width,eff[1],0,effErr[1]);
+    grEff[1]->SetName(("grEff_vs_Width_M1000_"+catLab).c_str());
+    grEff[1]->SetMarkerSize(1.5);
+    grEff[1]->SetMarkerColor(kRed);
+    grEff[1]->SetMarkerStyle(21);
+    grEff[1]->GetXaxis()->SetTitle("Natural Width [GeV]");
+    grEff[1]->GetYaxis()->SetTitle("Efficiency");
+    
+    grEff[2]=new TGraphErrors(4,width,eff[2],0,effErr[2]);
+    grEff[2]->SetName(("grEff_vs_Width_M1500_"+catLab).c_str());
+    grEff[2]->SetMarkerSize(1.8);
+    grEff[2]->SetMarkerColor(kBlue);
+    grEff[2]->SetMarkerStyle(22);
+    grEff[2]->GetXaxis()->SetTitle("Natural Width [GeV]");
+    grEff[2]->GetYaxis()->SetTitle("Efficiency");
+    
+    grEff[3]=new TGraphErrors(4,width,eff[3],0,effErr[3]);
+    grEff[3]->SetName(("grEff_vs_Width_M2000_"+catLab).c_str());
+    grEff[3]->SetMarkerSize(1.5);
+    grEff[3]->SetMarkerColor(kGreen+3);
+    grEff[3]->SetMarkerStyle(24);
+    grEff[3]->GetXaxis()->SetTitle("Natural Width [GeV]");
+    grEff[3]->GetYaxis()->SetTitle("Efficiency");
+
+    grEff[0]->SetMaximum(0.25);
+    grEff[1]->SetMaximum(0.25);
+    grEff[2]->SetMaximum(0.25);
+    grEff[3]->SetMaximum(0.25);
+    grEff[0]->SetMinimum(0.0);
+    grEff[1]->SetMinimum(0.0);
+    grEff[2]->SetMinimum(0.0);
+    grEff[3]->SetMinimum(0.0);
+
+    TCanvas *cc=new TCanvas("canEffWidth",("CANVAS - EFF vs WIDTH - "+catLab).c_str(),900,900);
+    grEff[3]->Draw("AP");
+    grEff[0]->Draw("P");
+    grEff[1]->Draw("P");
+    grEff[2]->Draw("P");
+
+    TLegend *l1;
+    if(ic>1)l1=new TLegend(0.13,0.7,0.43,0.93);
+    else l1=new TLegend(0.13,0.25,0.43,0.45);
+    l1->SetFillColor(kWhite);
+    l1->SetHeader(catLab.c_str());
+    l1->AddEntry(grEff[0],"M=700 GeV","P");
+    l1->AddEntry(grEff[1],"M=1000 GeV","P");
+    l1->AddEntry(grEff[2],"M=1500 GeV","P");
+    l1->AddEntry(grEff[3],"M=2000 GeV","P");
+    l1->Draw();
+
+    cc->SaveAs(("can_eff_vs_width_"+catLab+".root").c_str());
+    cc->SaveAs(("can_eff_vs_width_"+catLab+".png").c_str());
+    delete cc;
+    delete l1;
+    //  delete[] grEff;
+  }//end lopp on categories
+
+  */
+
+  
+  for(int is =0; is<nsig; is++)
+    {
+      double MAss = 750+250*is;
+      if(is<6)outFile<<MAss;
+      else if(is==6)outFile<<"1000 (MG, c=0.05)";
+      else if(is==7)outFile<<"1000 (MG, c=0.20)";
+      else if(is==8)outFile<<"1500 (MG, c=0.20)";
+      else outFile<<"?????";
+
+      for(int ic=0;ic<nCat; ic++)
+	{
+	  outFile<<"		"<<SigEff[is][ic];
+	}
+      outFile<<endl;
+    }
+  
+
+
+}//end main

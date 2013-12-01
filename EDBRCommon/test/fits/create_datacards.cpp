@@ -108,8 +108,8 @@ int main( int argc, char* argv[] ) {
 
   float lumi_ELE;
   float lumi_MU;
-  lumi_ELE=19760.; //pb^-1
-  lumi_MU =19780.; //pb^-1
+  lumi_ELE=19712.; //pb^-1
+  lumi_MU =19671.; //pb^-1
 
   std::cout<<"Starting card creation with the following settings:"<<endl;
   std::cout<<"InputDir with fits: "<<myOutDir.c_str()<<endl;
@@ -151,7 +151,7 @@ int main( int argc, char* argv[] ) {
     }
     
     //    std::string datacardDir("DataCards_20120210") ;
-    for(int i =0; i < widths.size() ; i++ ){
+    for(unsigned int i =0; i < widths.size() ; i++ ){
       //if(mass!=800)continue;
       std::cout << std::endl << std::endl;;
       std::cout << "++++++++++++++++++++++" << std::endl;
@@ -176,10 +176,11 @@ int main( int argc, char* argv[] ) {
 	  create_singleDatacard( mass,widths[i], lumi_MU,   "MU", 1,1, f1_eff_vs_mass_MU_1JHP);
 	  create_singleDatacard( mass,widths[i], lumi_MU,   "MU", 1,0, f1_eff_vs_mass_MU_1JLP);
 	}
-      if(jetCats>1&&mass<=800){
-	if(leptType=="ELE"||leptType=="ALL")create_singleDatacard( mass,widths[i], lumi_ELE, "ELE", 2,-1, f1_eff_vs_mass_ELE_2J);
-	if(leptType=="MU"||leptType=="ALL")create_singleDatacard( mass,widths[i], lumi_MU,   "MU", 2,-1, f1_eff_vs_mass_MU_2J);
-      }
+      //   if(jetCats>1&&mass<=800){
+      //	if(leptType=="ELE"||leptType=="ALL")create_singleDatacard( mass,widths[i], lumi_ELE, "ELE", 2,-1, f1_eff_vs_mass_ELE_2J);
+      //	if(leptType=="MU"||leptType=="ALL")create_singleDatacard( mass,widths[i], lumi_MU,   "MU", 2,-1, f1_eff_vs_mass_MU_2J);
+      // }
+
     } // for widths
   } //while masses
 
@@ -269,7 +270,11 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   ////->  get main variable from input workspace:
   if(nxj==2){mZZmin_=bins2[0];mZZmax_=bins2[nBins2-1];}//get in sync with was done in fitBackground for 2J category
   //  else {mZZmin_ =bins1[0];mZZmax_=bins1[nBins1-1];}//get in sync with was done in fitBackground for 2J category
-  else {mZZmin_ =500;mZZmax_=bins1[nBins1-1];}
+  else{
+    mZZmax_=bins1[nBins1-1];
+    if(pur==1) mZZmin_ =startFit;
+    else mZZmin_ =500.0;//650.0; use same range otherwise RooStats will get confused when merging cards
+  }
   RooRealVar* CMS_xzz_mZZ = new RooRealVar("mZZ","mZZ",mZZmin_,mZZmax_);//it works
   CMS_xzz_mZZ->setMin(mZZmin_);  
   std::cout<<"\n==== Printing multiline verbose of variable created on-the-fly: ===="<<endl;
@@ -311,7 +316,7 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   ofs << "#jmax 1  number of backgrounds" << std::endl;
   ofs << "#kmax *  number of nuisance parameters (sources of systematical uncertainties)" << std::endl;
   ofs << "------------ " << std::endl;
-  ofs << "shapes sig"<< channel_marker <<" CMS_"<< channel_marker <<"_" << suffix_str << " "<< channel_marker <<"_" << suffix_str << ".input.root  w:" <<("signal"+rename_str).c_str()<< std::endl;
+  ofs << "shapes "<<signalProcessName<<"_"<<channel_marker <<" CMS_"<< channel_marker <<"_" << suffix_str << " "<< channel_marker <<"_" << suffix_str << ".input.root  w:" <<(signalProcessName+rename_str).c_str()<< std::endl;
   ofs << "shapes background"<< channel_marker <<" CMS_"<< channel_marker <<"_" << suffix_str << " "<< channel_marker <<"_" << suffix_str << ".input.root w:"<<bkgd_shape_name.c_str()  << std::endl;
   ofs << "shapes data_obs   CMS_"<< channel_marker <<"_" << suffix_str << " "<< channel_marker <<"_" << suffix_str << ".input.root w:"<<("dataset_obs"+rename_str).c_str()  << std::endl;
   ofs << "------------ " << std::endl;
@@ -346,14 +351,18 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   ofs << "observation   " << observedYield << std::endl;
   ofs << "------------ " << std::endl;
   ofs << "bin                CMS_"<< channel_marker <<"_" << suffix <<  "\tCMS_"<< channel_marker <<"_" << suffix << std::endl;
-  ofs << "process            sig"<< channel_marker <<"\t\t\tbackground"<< channel_marker  << std::endl;
+  ofs << "process            "<<signalProcessName<<"_"<<channel_marker <<"\t\t\tbackground"<< channel_marker  << std::endl;
   ofs << "process            0\t\t\t1" << std::endl;
 
   float eff = f1_eff_vs_mass->Eval(hp.mH);
   float rate_gg   = eff*hp.XSgg*hp.BRZZto2l2q*lumi; //xsect has both ee and mm
 
   ///////////////
-  //->  compute expected BG yield from observed sideband events:
+  //->  compute expected BG yield from observed sideband events.
+  //for ZZ: normalization in [500, 2800] always, also for LP
+  //reason is that one must create workspaces for HiggsComb tool
+  //using same RooRealVar otherwise mess with RooStats when 
+  //combining channels
   Double_t rate_background = DataCardUtils::get_backgroundNormalization(bgws , leptType_str);
   std::cout <<"Background rate: "<< rate_background << std::endl;
 
@@ -364,7 +373,7 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   ////////////////////
   //->  and now systematics:
 
-  ofs << "lumi_8TeV\t\t\tlnN\t1.044\t\t\t1.0" << std::endl;
+  ofs << "lumi_8TeV\t\t\tlnN\t1.026\t\t\t1.0" << std::endl;
 
   //std::pair<double,double> pdf_gg  = theorSyst( hp.XSpdfgg_m, hp.XSpdfgg_p, 0.04, 0.015 );
   //ofs << "pdf_gg\t\tlnN\t" << systString(pdf_gg) << "\t1.0" << std::endl;
@@ -372,7 +381,7 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   //std::pair<double,double> QCDscale_ggH = theorSyst( hp.XSgg_m, hp.XSgg_p);
   //ofs << "QCDscale_ggH\tlnN\t" << systString(QCDscale_ggH) << "\t1.0" << std::endl;
 
-  ofs << "CMS_trigger_" << DataCardUtils::leptType_datacards(leptType_str) << "\tlnN\t" << systString(leptTriggerSyst(leptType_str)) << "\t1.0" << std::endl;
+  ofs << "CMS_"<<channel_marker.c_str() <<"_trigger_" << DataCardUtils::leptType_datacards(leptType_str) << "\tlnN\t" << systString(leptTriggerSyst(leptType_str)) << "\t1.0" << std::endl;
 
   ofs << "CMS_eff_" << DataCardUtils::leptType_datacards(leptType_str) << "\t\tlnN\t" << systString(leptEffSyst(leptType_str)) << "\t1.0" << std::endl;
 
@@ -380,7 +389,9 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
 
   ofs << "CMS_scale_j\t\tlnN\t" << systString(jetScaleSyst(hp.mH)) <<  "\t1.0" << std::endl;
 
-  ofs << "CMS_eff_vtag\t\tlnN\t" << systString(VTagEffSyst(leptType_str, nxj, hp.mH,pur),-1.) << "\t1.0" << std::endl;
+  ofs << "CMS_eff_vtag_tau21_sf\t\tlnN\t" << systString(VTagEffSyst(leptType_str, nxj, hp.mH,pur),-1.) << "\t1.0" << std::endl;
+  //  ofs << "CMS_eff_vtag_mass_sf\t\tlnN\t" << "1.0" << "\t1.0" << std::endl;
+  //  ofs << "CMS_eff_vtag_model\t\tlnN\t" << "1.0" << "\t1.0" << std::endl;
 
   ofs << "CMS_pu\t\tlnN\t"<<systString(puSyst(hp.mH)) <<"\t\t\t1.0" << std::endl;
   std::cout << "CMS_pu\t\tlnN\t"<<systString(puSyst(hp.mH)) <<"\t\t\t1.0" << std::endl;
@@ -391,7 +402,18 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
 
   // syst done. now finish with sig and bkg shape parameters:
 	
-  double bgNorm = DataCardUtils::get_backgroundNormalization(bgws,leptType_str,nxj,pur,"dsDataSB");
+  double bgNorm = 0.0;
+  if(useVJetsNormFromMJFit&&nxj==1){
+    double bgNormUnc=0.0;
+    if(leptType_str=="ELE")bgNormUnc = extNorm_1J_err[0][pur];
+    else if(leptType_str=="MU")bgNormUnc = extNorm_1J_err[1][pur];
+    else if(leptType_str=="ALL")bgNormUnc = sqrt(extNorm_1J_err[0][pur]*extNorm_1J_err[0][pur] + extNorm_1J_err[1][pur]*extNorm_1J_err[1][pur]);
+    else bgNormUnc = 0.0;
+    bgNorm=bgNormUnc/rate_background;
+    cout<<"Bkgd Normalization Uncertainty for "<<leptType_str.c_str()<<" Pur="<<pur<<" -> "<<bgNormUnc<<" ; rel err = "<<bgNorm<<endl;
+  }
+  else bgNorm = DataCardUtils::get_backgroundNormalization(bgws,leptType_str,nxj,pur,"dsDataSB");
+
   char bgNorm_char[100];
   sprintf( bgNorm_char, "%.0lf", bgNorm);
   std::string bgNorm_str(bgNorm_char);
@@ -404,7 +426,8 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   char bgNormName[200];
   sprintf( bgNormName, "CMS_%s_bkg%dJ%s%s%sp0",channel_marker.c_str(), nxj,pur_str.c_str(), (DataCardUtils::leptType_datacards(leptType_str)).c_str(), (DataCardUtils::leptType_datacards(leptType_str)).c_str() );
   std::string bgNormName_str(bgNormName);
-  ofs << bgNormName_str << "\tgmN " << bgNorm_str << "\t---\t" << alpha_str << std::endl;
+  if(useVJetsNormFromMJFit)  ofs << bgNormName_str << "\tlnN    ---\t" <<(1.0+bgNorm)  << std::endl;
+  else   ofs << bgNormName_str << "\tgmN " << bgNorm_str << "\t---\t"  << alpha_str << std::endl;
   //std::cout << bgNormName_str << "\tgmN " << bgNorm_str << "\t-----\t-----\t" << alpha_str << std::endl;
 
   //  RooArgList bgPars = bgFitResult->floatParsFinal();
@@ -434,45 +457,71 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   //lepton scale 
   char sigSystp1_LepScale[200];//m
   char sigSystp2_LepScale[200];//width
-  sprintf(sigSystp1_LepScale,"CMS_%s_sig%dJ%s_p1_scale",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str());
-  sprintf(sigSystp2_LepScale,"CMS_%s_sig%dJ%s_p2_scale",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str(),DataCardUtils::leptType_datacards(leptType_str).c_str());
+  sprintf(sigSystp1_LepScale,"CMS_sig_p1_scale_%s",DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str());
+  sprintf(sigSystp2_LepScale,"CMS_sig_p2_scale_%s",DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str(),DataCardUtils::leptType_datacards(leptType_str).c_str());
+  char sigSystp1_TmpName[200];//m
+  char sigSystp2_TmpName[200];//width
+  sprintf(sigSystp1_TmpName,"%s_NomUnc",sigSystp1_LepScale);
+  sprintf(sigSystp2_TmpName,"%s_NomUnc",sigSystp2_LepScale);
+
   //cout << "CB mean =" << CB_mean.getVal() << " CB sigma = " << CB_sigma.getVal() << endl;
-  double peakSystFactor;
-  double widthSystFactor;
+  double peakSystFactor=0.0,widthSystFactor=0.0;
   if(leptType_str == "ELE") {peakSystFactor=CMS_sig1Je_p1_scale; widthSystFactor=CMS_sig1Je_p2_scale;}//ele width negligible. we won't consider it // Defined in Config_XZZ.h and Config_XWW.h
   if(leptType_str == "MU") {peakSystFactor=CMS_sig1Jm_p1_scale; widthSystFactor=CMS_sig1Jm_p2_scale;}  // Defined in Config_XZZ.h and Config_XWW.h
-  ofs << std::string(sigSystp1_LepScale) << " param 1.0 "  << peakSystFactor << endl; 
-  if(leptType_str == "MU")ofs << std::string(sigSystp2_LepScale) << " param 1.0 "  << widthSystFactor << endl;
-	
+  RooRealVar shapeSystPeak_LepScale(sigSystp1_TmpName,sigSystp1_TmpName,peakSystFactor);
+  RooRealVar shapeSystWidth_LepScale(sigSystp2_TmpName,sigSystp2_TmpName,widthSystFactor);
+  shapeSystPeak_LepScale.setConstant(kTRUE);
+  shapeSystWidth_LepScale.setConstant(kTRUE);
+  ofs << std::string(sigSystp1_LepScale) << " param 0.0 1.0 "  <<endl;// peakSystFactor << endl; 
+  if(leptType_str == "MU")ofs << std::string(sigSystp2_LepScale) << " param 0.0 1.0 "  <<endl;// widthSystFactor << endl;
+  	
   //lepton resolution omitted because small
   char sigSystp1_LepRes[200];//m
   char sigSystp2_LepRes[200];//width
-  sprintf(sigSystp1_LepRes,"CMS_%s_sig%dJ%s_p1_res",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str()
-  sprintf(sigSystp2_LepRes,"CMS_%s_sig%dJ%s_p2_res",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str());
+  sprintf(sigSystp1_LepRes,"CMS_%s_sig%dJ_p1_%s_res",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str()
+  sprintf(sigSystp2_LepRes,"CMS_%s_sig%dJ_p2_%s_res",channel_marker.c_str(),nxj,DataCardUtils::leptType_datacards(leptType_str).c_str());//,pur_str.c_str());
+  sprintf(sigSystp1_TmpName,"%s_NomUnc",sigSystp1_LepRes);
+  sprintf(sigSystp2_TmpName,"%s_NomUnc",sigSystp2_LepRes);
 
   //jet scale: same and fully correlated between ele and mu
   char sigSystp1_JetScale[200];//m
   char sigSystp2_JetScale[200];//width	
-  sprintf(sigSystp1_JetScale,"CMS_%s_sig%dJ_p1_jes",channel_marker.c_str(),nxj);//,pur_str.c_str());
-  sprintf(sigSystp2_JetScale,"CMS_%s_sig%dJ_p2_jes",channel_marker.c_str(),nxj);//,pur_str.c_str());
-  peakSystFactor=CMS_sig1J_p1_jes; widthSystFactor=CMS_sig1J_p2_jes; // Defined in Config_XZZ.h and Config_XWW.h
+  //  sprintf(sigSystp1_JetScale,"CMS_%s_sig%dJ_p1_jes",channel_marker.c_str(),nxj);//,pur_str.c_str());
+  //  sprintf(sigSystp2_JetScale,"CMS_%s_sig%dJ_p2_jes",channel_marker.c_str(),nxj);//,pur_str.c_str());
+  sprintf(sigSystp1_JetScale,"CMS_sig_p1_jes");//,pur_str.c_str());
+  sprintf(sigSystp2_JetScale,"CMS_sig_p2_jes");
+  sprintf(sigSystp1_TmpName,"%s_%s_NomUnc",sigSystp1_JetScale,channel_marker.c_str());
+  sprintf(sigSystp2_TmpName,"%s_%s_NomUnc",sigSystp2_JetScale,channel_marker.c_str());
+  peakSystFactor=CMS_sig1J_p1_jes; 
+  widthSystFactor=CMS_sig1J_p2_jes; // Defined in Config_XZZ.h and Config_XWW.h
   //for ww, use a line from 2% to 3% from 600 to 2500
   if(!isZZChannel)widthSystFactor = 0.02 + (0.03-0.02)/(2500-600)*(hp.mH-600);
-
+  RooRealVar shapeSystPeak_JetScale(sigSystp1_TmpName,sigSystp1_TmpName,peakSystFactor);
+  RooRealVar shapeSystWidth_JetScale(sigSystp2_TmpName,sigSystp2_TmpName,widthSystFactor);
+  shapeSystPeak_JetScale.setConstant(kTRUE);
+  shapeSystWidth_JetScale.setConstant(kTRUE);
   //in ZZ, negligible size of syst on peak shift from JES, omit it
-  if(!isZZChannel)ofs << std::string(sigSystp1_JetScale) << " param 1.0 "  << peakSystFactor << endl; 
-  ofs << std::string(sigSystp2_JetScale) << " param 1.0 "  << widthSystFactor << endl;
+  if(!isZZChannel)ofs << std::string(sigSystp1_JetScale) << " param 0.0 1.0" <<endl;// << peakSystFactor << endl; 
+  ofs << std::string(sigSystp2_JetScale) << " param 0.0 1.0"  << endl;//widthSystFactor << endl;
 
   //jet resolution: same and fully correlated between ele and mu
   char sigSystp1_JetRes[200];//m
   char sigSystp2_JetRes[200];//width	
-  sprintf(sigSystp1_JetRes,"CMS_%s_sig%dJ_p1_jer",channel_marker.c_str(),nxj);//,pur_str.c_str());
-  sprintf(sigSystp2_JetRes,"CMS_%s_sig%dJ_p2_jer",channel_marker.c_str(),nxj);//,pur_str.c_str());
+  //sprintf(sigSystp1_JetRes,"CMS_%s_sig%dJ_p1_jer",channel_marker.c_str(),nxj);//,pur_str.c_str());
+  //sprintf(sigSystp2_JetRes,"CMS_%s_sig%dJ_p2_jer",channel_marker.c_str(),nxj);//,pur_str.c_str());
+  sprintf(sigSystp1_JetRes,"CMS_sig_p1_jer");//,pur_str.c_str());
+  sprintf(sigSystp2_JetRes,"CMS_sig_p2_jer");//,pur_str.c_str());
+  sprintf(sigSystp1_TmpName,"%s_%s_NomUnc",sigSystp1_JetRes,channel_marker.c_str());
+  sprintf(sigSystp2_TmpName,"%s_%s_NomUnc",sigSystp2_JetRes,channel_marker.c_str());
   peakSystFactor=CMS_sig1J_p1_jer;  // Defined in Config_XZZ.h and Config_XWW.h
   widthSystFactor=CMS_sig1J_p2_jer;  // Defined in Config_XZZ.h and Config_XWW.h
+  RooRealVar shapeSystPeak_JetRes(sigSystp1_TmpName,sigSystp1_TmpName,peakSystFactor);
+  RooRealVar shapeSystWidth_JetRes(sigSystp2_TmpName,sigSystp2_TmpName,widthSystFactor);
+  shapeSystPeak_JetRes.setConstant(kTRUE);
+  shapeSystWidth_JetRes.setConstant(kTRUE);
   //in ZZ, negligible size of syst on peak shift from JER, omit it
-  if(!isZZChannel)ofs << std::string(sigSystp1_JetRes) << " param 1.0 "  << peakSystFactor << endl; 
-  ofs << std::string(sigSystp2_JetRes) << " param 1.0 "  << widthSystFactor << endl;
+  if(!isZZChannel)ofs << std::string(sigSystp1_JetRes) << " param 0.0 1.0 "  <<endl;// peakSystFactor << endl; 
+  ofs << std::string(sigSystp2_JetRes) << " param 0.0 1.0 "  << endl;//widthSystFactor << endl;
 	
   ofs.close();
   fitResultsFile->Close();
@@ -509,23 +558,24 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
 
   ////////////////////
   //->  get Bkgd shape:
-  RooAbsPdf *expo_fit =0;
-  RooAbsPdf* background_decorr =0;
-  bgws->Print("v");
- //  if(pur==1 && isZZChannel){	  
-//     expo_fit =bgws->pdf(("exp_fit_"+channel_marker).c_str());
-//     expo_fit->SetName(bkgd_shape_name.c_str());
-//     // and import it:
-//     w->import(*expo_fit, RooFit::RecycleConflictNodes());
-//   }
-//   else{
- 
-   //This if you want ot use the leveled expo
-    background_decorr = bgws->pdf(("levexp_dcr_"+channel_marker).c_str());
-    background_decorr->SetName(bkgd_shape_name.c_str());
-    w->import(*background_decorr, RooFit::RecycleConflictNodes());
-    //  }
 
+  RooAbsPdf* background_decorr =0;
+  // //bgws->Print("v");
+  //  RooAbsPdf *expo_fit =0;
+  //  if(pur==1 && isZZChannel){	  
+  //     expo_fit =bgws->pdf(("exp_fit_"+channel_marker).c_str());
+  //     expo_fit->SetName(bkgd_shape_name.c_str());
+  //     // and import it:
+  //     w->import(*expo_fit, RooFit::RecycleConflictNodes());
+  //   }
+  //   else{
+ 
+  //This if you want ot use the leveled expo
+  background_decorr = bgws->pdf(("levexp_dcr_"+channel_marker).c_str());
+  background_decorr->SetName(bkgd_shape_name.c_str());
+  w->import(*background_decorr, RooFit::RecycleConflictNodes());
+  //  }
+  
   //// now define signal shape:
   //// (didn manage to do use get_signalShape without a crash):
 
@@ -570,25 +620,33 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
   RooRealVar CB_gamma_nom(sigp7name_nom,sigp7name_nom,mass*width);
 
   //used for systematics
-  RooRealVar CB_mean_lepscale(sigSystp1_LepScale,sigSystp1_LepScale,1.0);
-  RooRealVar CB_mean_lepres(sigSystp1_LepRes,sigSystp1_LepRes,1.0);
-  RooRealVar CB_mean_jes(sigSystp1_JetScale,sigSystp1_JetScale,1.0);
-  RooRealVar CB_mean_jer(sigSystp1_JetRes,sigSystp1_JetRes,1.0);
-  RooRealVar CB_sigma_lepscale(sigSystp2_LepScale,sigSystp2_LepScale,1.0);
-  RooRealVar CB_sigma_lepres(sigSystp2_LepRes,sigSystp2_LepRes,1.0);
-  RooRealVar CB_sigma_jes(sigSystp2_JetScale,sigSystp2_JetScale,1.0);
-  RooRealVar CB_sigma_jer(sigSystp2_JetRes,sigSystp2_JetRes,1.0);
+  RooRealVar CB_mean_lepscale(sigSystp1_LepScale,sigSystp1_LepScale,0.0);
+  RooRealVar CB_mean_lepres(sigSystp1_LepRes,sigSystp1_LepRes,0.0);
+  RooRealVar CB_mean_jes(sigSystp1_JetScale,sigSystp1_JetScale,0.0);
+  RooRealVar CB_mean_jer(sigSystp1_JetRes,sigSystp1_JetRes,0.0);
+  RooRealVar CB_sigma_lepscale(sigSystp2_LepScale,sigSystp2_LepScale,0.0);
+  RooRealVar CB_sigma_lepres(sigSystp2_LepRes,sigSystp2_LepRes,0.0);
+  RooRealVar CB_sigma_jes(sigSystp2_JetScale,sigSystp2_JetScale,0.0);
+  RooRealVar CB_sigma_jer(sigSystp2_JetRes,sigSystp2_JetRes,0.0);
 
 
-  RooArgList mean_sigshape_vars(CB_mean_nom,CB_mean_lepscale,CB_mean_jes,CB_mean_jer,"mean_sigshape_vars");
-  RooArgList sigma_sigshape_vars(CB_sigma_nom,CB_sigma_lepscale,CB_sigma_jes,CB_sigma_jer,"sigma_sigshape_vars");
-  RooProduct CB_mean(sigp1name,sigp1name,mean_sigshape_vars);
-  RooProduct CB_sigma(sigp2name,sigp2name,sigma_sigshape_vars);
+  RooArgList mean_sigshape_vars(CB_mean_nom,shapeSystPeak_LepScale,CB_mean_lepscale,shapeSystPeak_JetScale,CB_mean_jes,shapeSystPeak_JetRes,CB_mean_jer,"mean_sigshape_vars");
+  RooArgList sigma_sigshape_vars(CB_sigma_nom,shapeSystWidth_LepScale,CB_sigma_lepscale,shapeSystWidth_JetScale,CB_sigma_jes,shapeSystWidth_JetRes,CB_sigma_jer,"sigma_sigshape_vars");
+  // RooProduct CB_mean(sigp1name,sigp1name,mean_sigshape_vars);
+  // RooProduct CB_sigma(sigp2name,sigp2name,sigma_sigshape_vars);
+
+  char sigMeanname[200];//m
+  char sigSigmaname[200];//width
+  sprintf(sigMeanname,"CMS_%s_sig%dJ%s%s_MEAN",channel_marker.c_str(),nxj,pur_str.c_str(),DataCardUtils::leptType_datacards(leptType_str).c_str()); 
+  sprintf(sigMeanname,"CMS_%s_sig%dJ%s%s_SIGMA",channel_marker.c_str(),nxj,pur_str.c_str(),DataCardUtils::leptType_datacards(leptType_str).c_str()); 
+  RooFormulaVar CB_mean(sigMeanname,sigMeanname,"@0*(1+@1*@2)*(1+@3*@4)*(1+@5*@6)",mean_sigshape_vars);
+  RooFormulaVar CB_sigma(sigSigmaname,sigSigmaname,"@0*(1+@1*@2)*(1+@3*@4)*(1+@5*@6)",sigma_sigshape_vars);
 
   RooAbsPdf* CB_SIG=0;
   
-  if(dims=="1d")
+  if(dims=="1d"){
     CB_SIG = new RooDoubleCB("CB_SIG","Crystal Ball",*CMS_xzz_mZZ,CB_mean,CB_sigma,CB_alpha1_nom,CB_n1_nom,CB_alpha2_nom,CB_n2_nom);
+  }
 
   RooRealVar zero("zero","zero",0);
   
@@ -648,11 +706,11 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
 
   // and import it:
   if(nxj==1){
-    CB_SIG->SetName(("signal"+rename_str).c_str());
+    CB_SIG->SetName((signalProcessName+rename_str).c_str());
     w->import(*CB_SIG, RooFit::RecycleConflictNodes());
   }
   if(nxj==2){
-    signal2J->SetName(("signal"+rename_str).c_str());
+    signal2J->SetName((signalProcessName+rename_str).c_str());
     w->import(*signal2J, RooFit::RecycleConflictNodes());
   }
 
@@ -672,8 +730,8 @@ void create_singleDatacard( float mass,float width, float lumi, const std::strin
 
   bool doPlot=false;
   // if(mass==650||mass==1000||mass==1500||mass==1600||mass==1700||mass==1900||mass==2000||mass==2100||mass==2400||mass==2500)doPlot=true;
-  if(mass==650||mass==1000||mass==1750||mass==2000||mass==2250||mass==2500)doPlot=true;
-  // if(mass==2200)doPlot=true;
+  //if(mass==650||mass==1000||mass==1750||mass==1900||mass==2250||mass==2500)doPlot=true;
+  if(mass==2200)doPlot=true;
   if(doPlot){
     const int nBinsTMP=nBins1;
     double binsTMP[nBinsTMP];
@@ -860,10 +918,10 @@ TheorSigParameters get_thParameters( float mass ) {
   xsect_file.clear();
   xsect_file.seekg(0);
 
-  float mH, XSgg, XSgg_p, XSgg_m, XSpdfgg_p,XSpdfgg_m, BRXtoZZ, BRZZto2l2q;
+  float mH(-99.0), XSgg(-99.0), XSgg_p(-99.0), XSgg_m(-99.0), XSpdfgg_p(-99.0),XSpdfgg_m(-99.0), BRXtoZZ(-99.0), BRZZto2l2q(0.0941);
   //XSvbf, XSvbf_p, XSvbf_m,XSpdfvbf_p,XSpdfvbf_m,    Gamma;
 
-  float mH_old, XSgg_old, XSgg_p_old, XSgg_m_old, XSpdfgg_p_old,XSpdfgg_m_old, BRXtoZZ_old, BRZZto2l2q_old;
+  float mH_old, XSgg_old, XSgg_p_old, XSgg_m_old, XSpdfgg_p_old,XSpdfgg_m_old;// BRXtoZZ_old, BRZZto2l2q_old;
   //XSvbf_old, XSvbf_p_old, XSvbf_m_old,XSpdfvbf_p_old,XSpdfvbf_m_old,   Gamma_old;
 
   TheorSigParameters hp;
@@ -876,8 +934,8 @@ TheorSigParameters get_thParameters( float mass ) {
     XSgg_m_old = XSgg_m;
     XSpdfgg_p_old = XSpdfgg_p;
     XSpdfgg_m_old = XSpdfgg_m;
-    BRXtoZZ_old = BRXtoZZ;
-    BRZZto2l2q_old = BRZZto2l2q;
+    //    BRXtoZZ_old = BRXtoZZ;
+    // BRZZto2l2q_old = BRZZto2l2q;
 
     xsect_file >> mH >> XSgg;
     BRXtoZZ=0.0;//unknown to me in this moment
@@ -1174,11 +1232,11 @@ std::pair<double,double> puSyst( double mass ) {
 std::pair<double,double> VTagEffSyst( const std::string& leptType_str, int nxj, double mass, int purity ) {
 
   std::pair<double,double> returnPair;
-  returnPair.first  = 0.70;//30% unc for 1JLP
-  returnPair.second = 1.30; 
+  returnPair.first  = (1.0 - CMS_eff_vtag_tau21_sf_LP);//taken from Config
+  returnPair.second = (1.0 + CMS_eff_vtag_tau21_sf_LP); 
   if(purity == 1){//1J HP
-    returnPair.first  = 1.08;//8% unc for 1JHP
-    returnPair.second = 0.92; 
+    returnPair.first  = (1.0 + CMS_eff_vtag_tau21_sf_HP);//sign must be oppostite of LP because they are anti-correlated
+    returnPair.second = (1.0 - CMS_eff_vtag_tau21_sf_HP); 
   }
 	
   return returnPair;

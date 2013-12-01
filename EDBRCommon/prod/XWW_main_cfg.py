@@ -86,21 +86,23 @@ process.rndmEventBlinding = cms.EDFilter("EDBREventSampler",
                                          SamplingFactor = cms.double(0.2) # 1/5 events pass the filter
                                          )
 
+eventFiltersList=['primaryVertexFilterPath',
+                  'noscrapingFilterPath',
+                  'hcalLaserEventFilterPath',
+                  'HBHENoiseFilterPath',
+                  'trackingFailureFilterPath',
+                  'CSCTightHaloFilterPath',
+                  'eeBadScFilterPath',
+                  'EcalDeadCellTriggerPrimitiveFilterPath',
+                  'ecalLaserFilterPath']
 
+if "DATA" in options.mcordata :
+     eventFiltersList.append('trkPOGFiltersPath')
+     
 process.badEventFilter = cms.EDFilter("HLTHighLevel",
                                      TriggerResultsTag =
                                       cms.InputTag("TriggerResults","","PAT"),
-                                      HLTPaths =
-                                      cms.vstring('primaryVertexFilterPath',
-                                                  'noscrapingFilterPath',
-                                                  'hcalLaserEventFilterPath',
-                                                  'HBHENoiseFilterPath',
-                                                  'trackingFailureFilterPath',
-                                                  'CSCTightHaloFilterPath',
-                                                  'eeBadScFilterPath',
-                                                  'EcalDeadCellTriggerPrimitiveFilterPath'
-    #                                              'totalKinematicsFilterPath' #only for Madgraph MC
-                                                  ),
+                                      HLTPaths =cms.vstring(eventFiltersList),
                                       eventSetupPathsKey = cms.string(''),
                                        # how to deal with multiple triggers: True (OR) accept if ANY is true, False
                                       #(AND) accept if ALL are true
@@ -272,6 +274,11 @@ process.analysisSequenceMuons = cms.Sequence(
     )
 
 
+if options.selection=="none":
+     process.selectedWelenuCandFilter.minNumber=0
+if options.selection=="none":
+     process.selectedWmunuCandFilter.minNumber=0
+
 
 ##############
 # PU weights #
@@ -406,14 +413,33 @@ process.selectedEDBRMergedCandFilterEle = process.selectedEDBRMergedCandFilter.c
                                                            )
 
 
+# assamble actual paths. Move Bad-Event & HLT filters to extra paths
+# for efficiency studies when no selection is required, so that
+# graviton reconstruction runs on every event
 
-if ( options.lepton == "both" or options.lepton == "ele"):
-     process.preselElePath = cms.Path(process.eventFilterSequence + process.analysisSequenceEVJJ + process.selectedEDBRKinFitCandFilterEle)
-     process.preselEleMergedPath = cms.Path(process.eventFilterSequence + process.analysisSequenceEVJ+process.selectedEDBRMergedCandFilterEle )
-     
-if ( options.lepton == "both" or options.lepton == "mu"):
-     process.preselMuPath = cms.Path(process.eventFilterSequence + process.analysisSequenceMVJJ + process.selectedEDBRKinFitCandFilterMu)
-     process.preselMuMergedPath = cms.Path(process.eventFilterSequence + process.analysisSequenceMVJ +process.selectedEDBRMergedCandFilterMu )
+if not options.selection == "none":
+     if ( options.lepton == "both" or options.lepton == "ele"):
+          process.preselElePath = cms.Path(process.eventFilterSequence + process.analysisSequenceEVJJ + process.selectedEDBRKinFitCandFilterEle)
+          process.preselEleMergedPath = cms.Path(process.eventFilterSequence + process.analysisSequenceEVJ+process.selectedEDBRMergedCandFilterEle )
+    
+     if ( options.lepton == "both" or options.lepton == "mu"):
+               process.preselMuPath = cms.Path(process.eventFilterSequence + process.analysisSequenceMVJJ + process.selectedEDBRKinFitCandFilterMu)
+               process.preselMuMergedPath = cms.Path(process.eventFilterSequence + process.analysisSequenceMVJ +process.selectedEDBRMergedCandFilterMu )
+
+
+else:
+     process.eventFilterPath = cms.Path(process.eventFilterSequence)
+     if ( options.lepton == "both" or options.lepton == "ele"):
+          process.preselElePath = cms.Path( process.analysisSequenceEVJJ + process.selectedEDBRKinFitCandFilterEle)
+          process.preselEleMergedPath = cms.Path( process.analysisSequenceEVJ+process.selectedEDBRMergedCandFilterEle )
+
+     if ( options.lepton == "both" or options.lepton == "mu"):
+          process.preselMuPath = cms.Path( process.analysisSequenceMVJJ + process.selectedEDBRKinFitCandFilterMu)
+          process.preselMuMergedPath = cms.Path( process.analysisSequenceMVJ +process.selectedEDBRMergedCandFilterMu )
+
+
+
+####################################
 
 
 ####################################

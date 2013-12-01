@@ -218,7 +218,8 @@ void AddSigData(RooWorkspace* w, Float_t mass, bool isWW) {
   //TString inDir   = "/afs/cern.ch/work/s/santanas/public/EXOVV_2012/ntuples/WW_02_05_2013_ForUnblinding/fullallrange/AnaSigTree_mWW_Type2_corrected/"; 
   //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv8/AnaSigTree/"; 
   //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv9/AnaSigTree/"; 
-  TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv10/AnaSigTree/"; 
+  //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv10/AnaSigTree/"; 
+  TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv12/AnaSigTree/"; 
 
   int iMass = abs(mass);       
   /*
@@ -242,7 +243,10 @@ void AddSigData(RooWorkspace* w, Float_t mass, bool isWW) {
   //== ZZ
   //TFile sigFile1(inDir+TString(Form("EXOVVTree_BulkG_ZZ_lljj_c0p2_M%d_SIG_NOcut.root", iMassOfFileToOpen)));
   //== WW
-  TFile sigFile1(inDir+TString(Form("treeEDBR_BulkG_WW_lvjj_c0p2_M%d_xww.root", iMassOfFileToOpen)));
+  //PAS: 
+  //TFile sigFile1(inDir+TString(Form("treeEDBR_BulkG_WW_lvjj_c0p2_M%d_xww.root", iMassOfFileToOpen)));
+  //PAPER:
+  TFile sigFile1(inDir+TString(Form("treeEDBR_BulkG_WW_inclusive_c0p2_M%d_xww.root", iMassOfFileToOpen)));
   //TFile sigFile1(inDir+TString(Form("treeEDBR_BulkG_WW_lvjj_c0p2_M%d_xww.root", iMass)));
 
   /*
@@ -258,10 +262,10 @@ void AddSigData(RooWorkspace* w, Float_t mass, bool isWW) {
 
   // common preselection cut
   //TString mainCut("1");
-  TString mainCut("region==1 && categories>=0 && categories<4"); //sideband + ignore 2jet categories (for the moment)
+  TString mainCut("region==1 && categories>=0 && categories<4"); //signal (reg=1) + ignore 2jet categories (for the moment)
 
   // Luminosity:
-  Float_t Lum = 19500.0;
+  Float_t Lum = 19700.0;
   RooRealVar lumi("lumi","lumi",Lum);
   w->import(lumi); 
 
@@ -391,8 +395,9 @@ void AddBkgData(RooWorkspace* w) {
   //TString inDir   = "./MiniTrees/Data_VV/";
   //TString inDir   = "/afs/cern.ch/work/s/santanas/public/EXOVV_2012/ntuples/WW_02_05_2013_ForUnblinding/fullallrange/AnaSigTree_mWW_Type2_corrected/"; 
   //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv8/AnaSigTree/"; 
-  TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv10/AnaSigTree/"; 
+  //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv10/AnaSigTree/"; 
   //TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv10/AnaSBTree/"; 
+  TString inDir   = "/afs/cern.ch/work/s/shuai/public/diboson/trees/productionv12/AnaSigTree/"; 
 
   //TFile dataFile(inDir+"dijetWtag_Moriond_Mar6_miniTree.root");   
   TFile dataFile(inDir+"treeEDBR_data_xww.root");   
@@ -400,7 +405,7 @@ void AddBkgData(RooWorkspace* w) {
 
   // common preselection cut
   //TString mainCut("1");
-  TString mainCut("region==1 && categories>=0 && categories<4"); //sideband + ignore 2jet categories (for the moment)
+  TString mainCut("region==1 && categories>=0 && categories<4"); //signal (reg=1) + ignore 2jet categories
 
   Int_t ncat = NCAT;
   Float_t minMassFit(MMIN),maxMassFit(MMAX); 
@@ -428,7 +433,7 @@ void AddBkgData(RooWorkspace* w) {
   //--
   // For MC background
   
-  Float_t LumForBkg = 19500.0;
+  Float_t LumForBkg = 19700.0;
   RooRealVar lumiForBkg ("lumiForBkg","lumiForBkg",LumForBkg);  
 
   RooRealVar *weightOriginal = (RooRealVar*) (*ntplVars)["weight"] ;
@@ -632,7 +637,7 @@ void SigModelFit(RooWorkspace* w, Float_t mass) {
       SigModelSet(w, params, c);
     }
 
-    bool redoFit = false;
+    bool redoFit = true;
     if(redoFit) {
       //MggSig[c]     ->fitTo(*sigToFit[c],Range(minMassFit,maxMassFit),SumW2Error(kTRUE));
       MggSig[c]     ->fitTo(*sigToFit[c],Range( TMath::Max(minMassFit,MASS-2.5*MASS*0.1) , MASS+2.5*MASS*0.1 ),SumW2Error(kTRUE));
@@ -2117,7 +2122,7 @@ void MakeDataCard_1Channel(RooWorkspace* w, const char* fileBaseName, const char
   //== Uncertainties on SIGNAL NORMALIZATION ==
 
   //Lumi
-  outFile << "lumi_8TeV               lnN  0.956/1.044    - " << endl;
+  outFile << "lumi_8TeV               lnN  0.974/1.026    - " << endl;
   
   //Trigger
   outFile <<   "CMS_Trigger_eff_g      lnN    0.99/1.01    - " << endl;
@@ -2134,9 +2139,9 @@ void MakeDataCard_1Channel(RooWorkspace* w, const char* fileBaseName, const char
 
   //W-tag efficiency
   if(iChan==0 || iChan==2)
-    outFile << "CMS_VV_eff_g_LP         lnN  1.27/0.73      - # Signal Efficiency" << endl;
+    outFile << "CMS_VV_eff_g_LP         lnN  1.237/0.763      - # Signal Efficiency" << endl;
   if(iChan==1 || iChan==3)
-    outFile << "CMS_VV_eff_g_HP         lnN  0.91/1.09      - # Signal Efficiency" << endl;
+    outFile << "CMS_VV_eff_g_HP         lnN  0.906/1.094      - # Signal Efficiency" << endl;
 
 
   //== Uncertainties on SIGNAL SHAPE ==

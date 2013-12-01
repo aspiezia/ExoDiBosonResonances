@@ -58,7 +58,7 @@ void CopyTreeVecToPlain(TTree *t1, std::string wType, std::string f2Name,std::st
 void CreateUnrolledTreesDATA(std::string inDir,std::string tmpFileName,std::string tmpTreeName,std::string weighting,int nxjCut,ostream &outlog);
 void CreateUnrolledTreesDYMCSIG(std::string inDirSIG,std::string tmpFileName,std::string tmpTreeName,std::string weighting,int nxjCut,ostream &outlog);
 void CreateUnrolledTreesVVMCSIG(std::string inDirSIG,std::string tmpFileName,std::string tmpTreeName,std::string weighting,int nxjCut,ostream &outlog);
-
+double getExtNormalization(int purityCut,double &extNorm, double &extNormELE, double &extNormMU);
 
 /*****************
  *
@@ -78,14 +78,14 @@ int main(){
   else   sprintf(foutn,"EXOVVTree_DATASB_NOcut.root");
   std::string tmpFileName=foutn;
   std::string weighting = "weight";
-  CreateUnrolledTreesDATA(inDirSB,tmpFileName, tmpTreeName,weighting,nxjCut,logf);
+  if(unrollTrees)CreateUnrolledTreesDATA(inDirSB,tmpFileName, tmpTreeName,weighting,nxjCut,logf);
 
   const std::string tmpSigTreeName="SelectedCandidatesSIG";
   char foutSig[64];
   if(nxjCut>=0)  sprintf(foutSig,"EXOVVTree_DATASIG_%d.root",nxjCut);
   else   sprintf(foutSig,"EXOVVTree_DATASIG_NOcut.root");
   std::string tmpSigFileName=foutSig;
-  CreateUnrolledTreesDATA(inDirSIG,tmpSigFileName, tmpSigTreeName,weighting,nxjCut,logf);
+  if(unrollTrees)CreateUnrolledTreesDATA(inDirSIG,tmpSigFileName, tmpSigTreeName,weighting,nxjCut,logf);
  
   TFile *ftree=new TFile(foutn,"READ");
   TTree *treeDATA_tmp=(TTree*)ftree->Get(tmpTreeName.c_str());
@@ -106,7 +106,7 @@ int main(){
 
   }//end if not useAlphaVV
 
-  TFile *ftreeHM=0;
+  // TFile *ftreeHM=0;
   TChain *treeHM_sig=0;
   if(useMCHM){
 
@@ -120,13 +120,14 @@ int main(){
     if(nxjCut>=0)  sprintf(foutVV,"EXOVVTree_MCVV_SIG_%dJ.root",nxjCut);
     else   sprintf(foutVV,"EXOVVTree_MCVV_SIG_NOcut.root");
   
-    CreateUnrolledTreesDYMCSIG(inDirSIG,tmpFileName,tmpTreeName,weighting, nxjCut,logf);
-
-    if(useAlphaVV){//we include VV in the alpha calculation, hence we didn't create the unrolled trees yet
-      tmpFileName=foutVV;
-      CreateUnrolledTreesVVMCSIG(inDirSIG,tmpFileName,tmpTreeName,weighting, nxjCut,logf);
+    if(unrollTrees){
+      CreateUnrolledTreesDYMCSIG(inDirSIG,tmpFileName,tmpTreeName,weighting, nxjCut,logf);
+      
+      if(useAlphaVV){//we include VV in the alpha calculation, hence we didn't create the unrolled trees yet
+	tmpFileName=foutVV;
+	CreateUnrolledTreesVVMCSIG(inDirSIG,tmpFileName,tmpTreeName,weighting, nxjCut,logf);
+      }
     }
-
     
     treeHM_sig=new TChain(tmpTreeName.c_str());
     treeHM_sig->Add(foutDYMC);
@@ -223,14 +224,15 @@ int main(){
       stringstream strmcut;
       strmcut<<minMZZ;
       //read in the file with the alpha fit function
-      TF1 *alpha_func=(TF1*)falpha->Get("alpha_fitfunc");
+
       RooWorkspace *ws = (RooWorkspace*)falpha->Get( ("ws_alpha_"+ssnxj.str()+"J_"+pur_str+"_"+leptType).c_str() );
       ws->Print();
 
-      RooPolynomial *ws_alpha_pol=(RooPolynomial*)ws->pdf("pol0_func");
-      RooRealVar *c0=(RooRealVar*)ws->var("c0");
-      RooPolynomial *pol0_new=new RooPolynomial("newpol0_func","Polynomial 0th (constant) for fit",*mZZ,*c0,0);
-      RooFormulaVar *alpha_formula=new RooFormulaVar("alpha_formula","alpha_formula","@0",RooArgList(*c0));
+      //TF1 *alpha_func=(TF1*)falpha->Get("alpha_fitfunc");
+      // RooPolynomial *ws_alpha_pol=(RooPolynomial*)ws->pdf("pol0_func");
+      //RooRealVar *c0=(RooRealVar*)ws->var("c0");
+      //RooPolynomial *pol0_new=new RooPolynomial("newpol0_func","Polynomial 0th (constant) for fit",*mZZ,*c0,0);
+      //RooFormulaVar *alpha_formula=new RooFormulaVar("alpha_formula","alpha_formula","@0",RooArgList(*c0));
 
       string lepCutStr="";
       if(leptType=="ELE")lepCutStr=" &&lep==0";
@@ -273,35 +275,44 @@ int main(){
       std::string name_datasb2="dsDataSB2tmp";//"_"+ssnxj.str()+"J"+pur_str;
       RooDataSet *dsDataSB2tmp=new RooDataSet(name_datasb2.c_str(),name_datasb2.c_str(),weightedData,RooArgSet(*mZZ,*nXjets,*region,*mJJ,*lep,*vTagPurity,*alphaWeight),cutSB.c_str(),"alphaWeight") ;
 
-      double normalizationOLD=dsDataSB2tmp->sumEntries();
+      //define fit ranges       
+      //if 1JLP of ZZ channel, start at 600 GeV     
+      double minFitRange=((inxj==1&&purityCut==0&&isZZChannel) ? 650.0 : startFit);
+      double maxFitRange=(inxj==1 ? mZZmax_ : bins[nBins-1]);
+      mZZ->setRange("fitRange",minFitRange,maxFitRange) ;
+      mZZ->setRange("plotRange",minMZZ,maxFitRange) ;
+
+
+
+      double normalizationOLD=(dsDataSB2tmp->reduce(CutRange("fitRange")))->sumEntries();
+      //for ZZ, 1JLP, define correction for normalization usign only fit range
+      if(isZZChannel&&purityCut==0){
+	normalizationOLD=(dsDataSB2tmp->reduce(CutRange("fitRange")))->sumEntries();
+      }
+
+
       delete weightedData;delete dsDataSB2tmp;
-      // assign wjets normalization
+
+      // assign wjets normalization from external info (for example: fit to MJ sidebands)
+      // do it only if you are taking the other bkgds from MC (this is an assumption
+      // done when calculating the new V+jets normalization); make sure that the fits
+      // to the MJ sidebands were done in the same mVV range used here
+
       double normalizationNEW=normalizationOLD;
+      double normalizationNEWELE=0.0,normalizationNEWMU=0.0;
 
-      if(!isZZChannel&&inxj==1)
-	{
-	  if(InTreeName=="SelectedCandidatesAB")
-	    {
-	      // for A->B
-	      if(leptType=="ELE"&&purityCut==0)normalizationNEW=91.7039;
-	      if(leptType=="ELE"&&purityCut==1)normalizationNEW=121.074;
-	      if(leptType=="MU"&&purityCut==0)normalizationNEW=175.271;
-	      if(leptType=="MU"&&purityCut==1)normalizationNEW=198.2;
-	    }
-	  else if(InTreeName=="SelectedCandidates")
-	    {
-	      //for Ana , wjets 180
-	      if(leptType=="ELE"&&purityCut==0)normalizationNEW=546.608;
-	      if(leptType=="ELE"&&purityCut==1)normalizationNEW=339.861;
-	      if(leptType=="MU"&&purityCut==0)normalizationNEW=835.742;
-	      if(leptType=="MU"&&purityCut==1)normalizationNEW=536.198;
-	    }
-	}//end if(!isZZChannel&&inxj==1)
+      if(inxj==1&&!useAlphaVV){
+	if(getExtNormalization(purityCut, normalizationNEW, normalizationNEWELE, normalizationNEWMU)==-1.0){
+	  logf<<"WARNING !!! Requested to normalize V+jets bkgd to externally provided values, but tree name does not match. TreeName: "<<InTreeName.c_str()<<std::endl;
+	}
+      }
+      //      normalizationNEW=normalizationOLD;
 
+      double normCorrection=normalizationNEW/normalizationOLD;  
       logf<<" normalizationNEW "<<normalizationNEW<<" normalizationOLD  "<<normalizationOLD<<endl;
 
       name_datasb2="dsDataSB2";
-      TTree* weightedData2 = weightTree(treeDATA_tmp , (TH1D*)falpha->Get(alphahname)  ,"alphaWeightedTree2",false,normalizationNEW/normalizationOLD );
+      TTree* weightedData2 = weightTree(treeDATA_tmp , (TH1D*)falpha->Get(alphahname)  ,"alphaWeightedTree2",false,normCorrection );
       RooDataSet *dsDataSB2=new RooDataSet(name_datasb2.c_str(),name_datasb2.c_str(),weightedData2,RooArgSet(*mZZ,*nXjets,*region,*mJJ,*lep,*vTagPurity,*alphaWeight),cutSB.c_str(),"alphaWeight") ;
       std::string name_datasig="dsDataSIG";//"_"+ssnxj.str()+"J"+pur_str;
       RooDataSet *dsDataSIG=new RooDataSet(name_datasig.c_str(),name_datasig.c_str(),(TTree*)treeDATA_sig,RooArgSet(*mZZ,*nXjets,*region,*mJJ,*lep,*vTagPurity),cutSIG.c_str()) ;//real data in signal region; cuts on mjj and nXjets
@@ -345,6 +356,13 @@ int main(){
 	delete mccontrol;
 	delete canX;
 	logf<<"; after addition of VV-MC: "<<dsDataSB2->sumEntries()<<endl;
+	//update normalizations
+	double normMCVVELE=0.0,normMCVVMU=0.0; 
+	normMCVVELE=(VVDataSetWeight->reduce(CutRange("fitRange"))->reduce(Cut("lep==0")))->sumEntries();
+	normMCVVMU=(VVDataSetWeight->reduce(CutRange("fitRange"))->reduce(Cut("lep==1")))->sumEntries();
+	normalizationNEWELE+=normMCVVELE;
+	normalizationNEWMU+=normMCVVMU;
+	logf<<"Norm of VV MC in mVV fit Range -> ELE= "<<normMCVVELE<<"  MU= "<<normMCVVMU<<endl;
 	cout<<"Finished to add the VV MC to the extrapolated SB."<<endl;
       }//end if not usealphavv
 
@@ -377,10 +395,15 @@ int main(){
 	//VVDataSetWeight->Print("v");
 	dsDataSB2->append(*HMDataSetWeight);
 	//dsDataSB2->Print("v");
-
-	std::cout << "We just added the VV-MC to the extrapolated SB. Now snaity check plot." << std::endl;
-
 	logf<<"; after addition of HM-MC: "<<dsDataSB2->sumEntries()<<"  MC added has density of "<<HM_Norm->getVal() <<endl;
+	//update normalizations
+	double normHMMCELE=0.0,normHMMCMU=0.0; 
+	normHMMCELE=(HMDataSetWeight->reduce(CutRange("fitRange"))->reduce(Cut("lep==0")))->sumEntries();
+	normHMMCMU=(HMDataSetWeight->reduce(CutRange("fitRange"))->reduce(Cut("lep==1")))->sumEntries();
+	normalizationNEWELE+=normHMMCELE;
+	normalizationNEWMU+=normHMMCMU;
+
+	logf<<"Norm of HM-MC in mVV fit Range -> ELE= "<<normHMMCELE<<"  MU= "<<normHMMCMU<<endl;
 	cout<<"Finished to add the HM MC to the extrapolated SB."<<endl;
       }//end if not usealphavv
 
@@ -398,13 +421,8 @@ int main(){
 
 
       //fit the weighted dataset with a custom function
-      double minFitRange=((inxj==1&&purityCut==0&&isZZChannel) ? 650.0 : startFit);//if 1JLP of ZZ channel, start at 600 GeV
-     
-      double maxFitRange=(inxj==1 ? mZZmax_ : bins[nBins-1]);
       std::cout<<"STARTING TO FIT WITH CUSTOM FUNCTION in range [ "<<minFitRange<<" , "<<maxFitRange <<" ]"<<std::endl;
       logf<<"STARTING TO FIT WITH CUSTOM FUNCTION in range [ "<<minFitRange<<" , "<<maxFitRange <<" ]"<<std::endl;
-      mZZ->setRange("fitRange",minFitRange,maxFitRange) ;
-      mZZ->setRange("plotRange",minMZZ,maxFitRange) ;
       double inislope;
       if(inxj==1)inislope=-0.25;
       if(inxj==2)inislope=-0.25;
@@ -438,25 +456,38 @@ int main(){
       RooRealVar *NbkgELE=new RooRealVar("bkgdNormalizationFullRangeELE",("Background normalization in ["+strmcut.str()+", maxMZZ]  (ELE)").c_str(),dsDataSB2->reduce("lep==0")->sumEntries(),0.0,10000.0);
       RooRealVar *NbkgMU=new RooRealVar("bkgdNormalizationFullRangeMU",("Background normalization in ["+strmcut.str()+", maxMZZ]  (MU)").c_str(),dsDataSB2->reduce("lep==1")->sumEntries(),0.0,10000.0);
       Nbkg->setConstant(kTRUE);
+      //normalizations in fit range
+      //for ZZ: normalization in [500, 2800] always, also for LP
+      //reason is that one must create workspaces for HiggsComb tool
+      //using same RooRealVar otherwise mess with RooStats when 
+      //combining channels
       RooRealVar *NbkgRange=new RooRealVar("bkgdNormalizationFitRange","Background normalization in range of fit (ELE+MU)",dsDataSB2->reduce(CutRange("fitRange"))->sumEntries(),0.0,10000.0);
       RooRealVar *NbkgRangeELE=new RooRealVar("bkgdNormalizationFitRangeELE","Background normalization in range of fit (ELE)",dsDataSB2->reduce(CutRange("fitRange"))->reduce("lep==0")->sumEntries(),0.0,10000.0);
       RooRealVar *NbkgRangeMU=new RooRealVar("bkgdNormalizationFitRangeMU","Background normalization in range of fit (MU)",dsDataSB2->reduce(CutRange("fitRange"))->reduce("lep==1")->sumEntries(),0.0,10000.0);
       RooRealVar *Nbkg500=new RooRealVar("bkgdNormalization500","Background normalization starting at M_VV=500 GeV",dsDataSB2->reduce(Cut("mZZ>500.0"))->sumEntries(),0.0,10000.0);
       RooRealVar *Nbkg500ELE=new RooRealVar("bkgdNormalization500ELE","Background normalization  starting at M_VV=500 GeV (ELE)",dsDataSB2->reduce(Cut("mZZ>500.0&&lep==0"))->sumEntries(),0.0,10000.0);
       RooRealVar *Nbkg500MU=new RooRealVar("bkgdNormalization500MU","Background normalization  starting at M_VV=500 GeV (MU)",dsDataSB2->reduce(Cut("mZZ>500.0&&lep==1"))->sumEntries(),0.0,10000.0);
+
+      if(useVJetsNormFromMJFit){
+	double ELEfrac_MJFit=normalizationNEWELE/ (normalizationNEWELE+normalizationNEWMU);
+	Nbkg500ELE->setVal(Nbkg500->getVal()*ELEfrac_MJFit);
+	Nbkg500MU->setVal(Nbkg500->getVal()*(1.0-ELEfrac_MJFit));
+      }
+
       NbkgRange->setConstant(kTRUE);
 
       //for High mass (>2000)
-      RooRealVar *Nbkg2000=new RooRealVar("bkgdNormalization500","Background normalization starting at M_VV=500 GeV",dsDataSB2->reduce(Cut("mZZ>2000.0"))->sumEntries(),0.0,10000.0);
-      RooRealVar *Nbkg2000ELE=new RooRealVar("bkgdNormalization500ELE","Background normalization  starting at M_VV=500 GeV (ELE)",dsDataSB2->reduce(Cut("mZZ>2000.0&&lep==0"))->sumEntries(),0.0,10000.0);
-      RooRealVar *Nbkg2000MU=new RooRealVar("bkgdNormalization500MU","Background normalization  starting at M_VV=500 GeV (MU)",dsDataSB2->reduce(Cut("mZZ>2000.0&&lep==1"))->sumEntries(),0.0,10000.0);
+      RooRealVar *Nbkg2000=new RooRealVar("bkgdNormalization2000","Background normalization starting at M_VV=500 GeV",dsDataSB2->reduce(Cut("mZZ>2000.0"))->sumEntries(),0.0,10000.0);
+      RooRealVar *Nbkg2000ELE=new RooRealVar("bkgdNormalization2000ELE","Background normalization  starting at M_VV=500 GeV (ELE)",dsDataSB2->reduce(Cut("mZZ>2000.0&&lep==0"))->sumEntries(),0.0,10000.0);
+      RooRealVar *Nbkg2000MU=new RooRealVar("bkgdNormalization2000MU","Background normalization  starting at M_VV=500 GeV (MU)",dsDataSB2->reduce(Cut("mZZ>2000.0&&lep==1"))->sumEntries(),0.0,10000.0);
       RooRealVar *SFDYHM=new RooRealVar("sfMCHighMass","Data/MC scale factor applied to DY+VV MC at high mass (applied only if requested)",DATAMC_HMSF[iP],0.0,10.0);
       SFDYHM->setConstant(kTRUE);
       // a0->setConstant(kTRUE);
       logf<<"Normalization in full range : ELE="<<NbkgELE->getVal()<<"  MU="<<NbkgMU->getVal()<<"  ALL="<<Nbkg->getVal()<<endl;
       logf<<"Normalization errors: Nent="<<Nent->getVal()<<" NormErr="<<NormErr->getVal()<<"  Nerr="<<Nerr->getVal()<<std::endl;
       logf<<"Norm In Range ALL = "<<NbkgRange->getVal()<<"   Expo-fit Slope="<<a0->getVal()<<std::endl;
-      logf<<"Norm In Range ELE = "<<NbkgRangeELE->getVal()<<"  MU = "<<NbkgRangeMU->getVal()<<endl; 
+      logf<<"Norm In Range (using ELE/MU ratio from extrapolated sidebands) ELE = "<<NbkgRangeELE->getVal()<<"  MU = "<<NbkgRangeMU->getVal()<<endl; 
+      logf<<"Norm In Range (using V+jets from fit) ELE = "<<normalizationNEWELE<<"  MU = "<<normalizationNEWMU<<endl; 
       logf<<"Norm In [500, INF] = "<<Nbkg500->getVal()<<"   Expo-fit Slope="<<a0->getVal()<<std::endl;
       logf<<"Norm In [500, INF] ELE = "<<Nbkg500ELE->getVal()<<"  MU = "<<Nbkg500MU->getVal()<<endl; 
       logf<<"Norm In [2000, INF] ELE = "<<Nbkg2000ELE->getVal()<<"  MU = "<<Nbkg2000MU->getVal()<<endl; 
@@ -464,6 +495,7 @@ int main(){
 	logf<<dsDataSIG->GetName()<<"  -> ALL: "<<dsDataSIG->numEntries()<<" ELE: "<<dsDataSIG->reduce("lep==0")->numEntries()<<" MU: "<<dsDataSIG->reduce("lep==1")->numEntries()<<endl;
 
 	logf<<dsDataSIG->GetName()<<" in [500, 2200]  -> ALL: "<<dsDataSIG->reduce("mZZ>500.0&&mZZ<2200.0")->numEntries()<<" ELE: "<<dsDataSIG->reduce("lep==0&&mZZ>500.0&&mZZ<2200.0")->numEntries()<<" MU: "<<dsDataSIG->reduce("lep==1&&mZZ>500.0&&mZZ<2200.0")->numEntries()<<endl;
+	logf<<dsDataSIG->GetName()<<" in [650, 2800]  -> ALL: "<<dsDataSIG->reduce("mZZ>650.0&&mZZ<2800.0")->numEntries()<<" ELE: "<<dsDataSIG->reduce("lep==0&&mZZ>650.0&&mZZ<2800.0")->numEntries()<<" MU: "<<dsDataSIG->reduce("lep==1&&mZZ>650.0&&mZZ<2800.0")->numEntries()<<endl;
 	logf<<dsDataSIG->GetName()<<" in [2000, INF]  -> ALL: "<<dsDataSIG->reduce("mZZ>2000.0")->numEntries()<<" ELE: "<<dsDataSIG->reduce("lep==0&&mZZ>2000.0")->numEntries()<<" MU: "<<dsDataSIG->reduce("lep==1&&mZZ>2000.0")->numEntries()<<endl;
       }
       r_sig2->printMultiline(logf,99,true);
@@ -633,7 +665,7 @@ int main(){
 	  if(n%50==0)std::cout<<"Throwing toy #"<<n<<"/"<<nToys<<" "<<std::endl;
 	  sprintf(alphahname,"tmp_%d",n);
 	  sprintf(tmpTname,"pseudoTree_%s",alphahname);    
-	  TTree* weightedPseudo = weightTree(treeDATA_tmp ,(TH1D*)falpha->Get(alphahname), tmpTname, false, normalizationNEW/normalizationOLD);
+	  TTree* weightedPseudo = weightTree(treeDATA_tmp ,(TH1D*)falpha->Get(alphahname), tmpTname, false, normCorrection);
 	  RooDataSet pseudoSB2("pseudoSB2","pseudoSB2",weightedPseudo,RooArgSet(*mZZ,*nXjets,*region,*mJJ,*lep,*alphaWeight,*vTagPurity),cutSB.c_str(),"alphaWeight") ;
 	  pseudoSB2.append(*VVDataSetWeight);
 	  //std::cout << "XXX " <<doPseudoTwoPars << "  " <<decorrLevExpo <<std::endl;
@@ -745,14 +777,17 @@ int main(){
       if(!plotFixedBinning)
 	{
 	  dsDataSB2->plotOn(xf,Binning(RooBinning(nBins-1,bins)),MarkerStyle(21),MarkerColor(kRed),RooFit::Range("plotRange"));//,Normalization(dsDataSB2->numEntries(),RooAbsPdf::NumEvent)
-	  if(unblind)dsDataSIG->plotOn(xf,Binning(RooBinning(nBins-1,bins)),MarkerStyle(20),MarkerColor(kBlack),RooFit::Range("plotRange"));
 	  if(useMCHM)HMDataSetWeight->plotOn(xf,MarkerStyle(21),MarkerColor(kBlue-7),Binning(RooBinning(nBins-1,bins)),RooFit::Range("plotRange"));
+	  if(unblind)dsDataSIG->plotOn(xf,Binning(RooBinning(nBins-1,bins)),MarkerStyle(20),MarkerColor(kBlack),RooFit::Range("plotRange"));
+
 	}
       else
 	{
+
 	  dsDataSB2->plotOn(xf,MarkerStyle(21),MarkerColor(kRed));
-	  if(unblind)dsDataSIG->plotOn(xf,MarkerStyle(20),MarkerColor(kBlack));
 	  if(useMCHM)HMDataSetWeight->plotOn(xf,MarkerStyle(21),MarkerColor(kBlue-7));
+	  if(unblind)dsDataSIG->plotOn(xf,MarkerStyle(20),MarkerColor(kBlack));
+
 	}
 
       logf<<"Check nromalization: NumEntries of dsDataSIG= "<<dsDataSIG->numEntries() <<"("<<dsDataSIG->sumEntries() <<")    SumEntries of dsDataSB2="<<dsDataSB2->sumEntries()<<"   numEntries="<<dsDataSB2->numEntries()<<"    Nbkg (NORM)="<<NbkgRange->getVal()<<"   Nent="<<Nent->getVal()<<"     Nerr="<<Nerr->getVal() <<std::endl;
@@ -772,7 +807,7 @@ int main(){
 
 
 	  fPads1->cd();
-	  RooHist* hpull = xf->pullHist() ;
+	  RooHist* hpull = xf->pullHist();
 	  xf->Draw();
 	  fPads1->Update();
 
@@ -1643,3 +1678,77 @@ void CreateUnrolledTreesVVMCSIG(std::string inDirSIG,std::string tmpFileName,std
 
 
 }//end CreateUnrolledTreesVVMCSIG()
+
+
+double getExtNormalization(int purityCut,double &extNorm, double &extNormELE, double &extNormMU){
+
+  if(InTreeName=="SelectedCandidatesAB"){ // for closure test A->B
+    if(!isZZChannel){//WW
+      if(leptType=="ELE"){
+	if(purityCut==0)extNormELE=91.7039;
+	if(purityCut==1)extNormELE=121.074;
+	extNorm=extNormELE;
+      }
+      if(leptType=="MU"){
+	if(purityCut==0)extNormMU=175.271;
+	if(purityCut==1)extNormMU=198.2;
+	extNorm=extNormMU;
+      }
+    }
+  }
+  else if(InTreeName=="SelectedCandidates"){
+    if(isZZChannel){
+	      //LP norm calculated in [650, 2800]
+      if(leptType=="ELE"||leptType=="ALL"){
+	if(purityCut<2)extNormELE=extNorm_1J[0][purityCut];
+	else{
+	  cout<<"\n\nERROR !!! Purity Category out of range !!! Purity=="<<purityCut<<endl;
+	  extNormELE= -99.0; //uhi uhi, something bad's gonna happen...
+	}
+	extNorm= extNormELE;
+      }
+      if(leptType=="MU"||leptType=="ALL"){
+	if(purityCut<2)extNormMU=extNorm_1J[1][purityCut];
+	else{
+	  cout<<"\n\nERROR !!! Purity Category out of range !!! Purity=="<<purityCut<<endl;
+	  extNormMU=-99.0;//uhi uhi, something bad's gonna happen...
+	}
+	extNorm= extNormMU;
+      }
+      if(leptType=="ALL"){
+	extNorm= extNormMU+extNormELE;
+      }
+    }
+    else{//WW analysis; for Ana , wjets 180
+      if(leptType=="ELE"||leptType=="ALL"){
+	if(purityCut<2)extNormELE=extNorm_1J[0][purityCut];
+	else{
+	  cout<<"\n\nERROR !!! Purity Category out of range !!! Purity=="<<purityCut<<endl;
+	  extNormELE=-99.0;//uhi uhi, something bad's gonna happen...
+	}
+	extNorm= extNormELE;
+      }
+      if(leptType=="MU"||leptType=="ALL"){
+	if(purityCut<2)extNormMU=extNorm_1J[1][purityCut];
+	else{
+	  cout<<"\n\nERROR !!! Purity Category out of range !!! Purity=="<<purityCut<<endl;
+	  extNormMU=-99.0;//uhi uhi, something bad's gonna happen...
+	}
+	extNorm= extNormMU;
+      }
+      if(leptType=="ALL"){
+	extNorm= extNormMU+extNormELE;
+      }
+    }
+  }
+  else{
+    cout<<"WARNING !!! Requested to normalize V+jets bkgd to externally provided values, but tree name does not match. TreeName: "<<InTreeName.c_str()<<std::endl;
+    extNormMU=-99.0;
+    extNormELE=-99.0;
+    extNorm=extNormMU+extNormELE;
+    return -1.0;
+  }
+  
+  return extNorm;
+
+}

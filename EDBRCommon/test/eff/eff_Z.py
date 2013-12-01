@@ -10,14 +10,14 @@ from array import array
 root.gROOT.SetBatch()        # don't pop up canvases
 root.gROOT.SetStyle('Plain') # white background
 
-elebins_pt  = [20,40,60,90,120,150,200,250,300,400,500,600,700,800,900,1000,1200,1500]
-elebins_eta = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,2.0,2.5,3.0]
+elebins_pt  = [20,40,60,90,120,150,200,250,300,400,500,600,700,800,900,1000,1200,1500,2000]
+elebins_eta = [0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.5,2.0,2.5,3.0]
 
-jetbins_pt =  [30,50,80,120,150,200,250,300,400,500,600,700,800,900,1000,1200,1500]
+jetbins_pt =  [30,50,80,120,150,200,250,300,400,500,600,700,800,900,1000,1200,1500,2000]
 jetbins_eta=  [0.,0.3,0.9,1.2,1.5,1.8,2.1,2.4]
 
 mubins_pt  =  elebins_pt
-mubins_eta =  elebins_eta
+mubins_eta =  [0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.5,2.0,2.4,3.0]
 
 histo_ele_gen     = root.TH2F("ele_gen","ele_gen",len(elebins_pt)-1,array('d',elebins_pt),len(elebins_eta)-1,array('d',elebins_eta))    
 histo_ele_genMatch = histo_ele_gen.Clone("ele_genreco")  # gen gen quantitites eles matched between reco and gen
@@ -84,7 +84,9 @@ def processSubsample(file):
         nevent += 1
         if nevent % 10000 ==0:
             print "event: " + str(nevent)
-        
+            
+        #print str(event.eventAuxiliary().run())
+        #print str(event.object().triggerResultsByName("CMG").accept("preselEleMergedPath"))
         # determine generated flavor and get generated kinematics
         haveleptons=0
         havejet=0
@@ -157,9 +159,9 @@ def processSubsample(file):
             
         #fill pure gen info
         if flavor == "ele":
-            histo_ele_gen.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
+            histo_ele_gen.Fill(genZlep.pt(),abs(genZlep.Eta()))
         if flavor == "mu":
-            histo_mu_gen.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
+            histo_mu_gen.Fill(genZlep.pt(),abs(genZlep.Eta()))
         histo_jet_gen.Fill(genjetp4.pt(),abs(genjetp4.eta()))
 
         if(event.eventAuxiliary().event() ==  2434343111):# strange fualty event
@@ -202,6 +204,14 @@ def processSubsample(file):
                 histo_jet_stab.Fill(genjetp4.pt(),abs(genjetp4.eta()))
                 histo_jet_pur.Fill(recojets[index].pt(),abs(recojets[index].eta()))
 
+        #only proceed to leptons if event filters pass
+        #this ensures trigger eff is taken into account
+        #other event fitlers could go anywhere but need to be restricted to
+        #either leptons or jets to avoid double counting
+        if not event.object().triggerResultsByName("CMG").accept("eventFilterPath"):
+            #print "failed trigger"
+            continue
+
         #print "startele"
         # fill matched electrons objects
         if flavor == "ele":
@@ -216,16 +226,16 @@ def processSubsample(file):
                 if ele.pt() < 80:
                     continue
             
-                histo_ele_reco.Fill(ele.pt(),abs(ele.rapidity()))
+                histo_ele_reco.Fill(ele.pt(),abs(ele.eta()))
                 dr1 = deltaR(ele.eta(),ele.phi(),genZlep.eta(),genZlep.phi())
                 if dr1 < closestDr1 :
                     closestDr1 = dr1
                     closest1 = index1
 
             if index1 != -1 and closestDr1 < 0.5: # found a matching electron for genlepon1
-                histo_ele_genMatch.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
-                if histo_ele_genMatch.FindBin(genZlep.pt(),abs(genZlep.Rapidity())) == histo_ele_genMatch.FindBin(recoeles[index1].pt(),abs(recoeles[index1].rapidity())):
-                    histo_ele_stab.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
+                histo_ele_genMatch.Fill(genZlep.pt(),abs(genZlep.Eta()))
+                if histo_ele_genMatch.FindBin(genZlep.pt(),abs(genZlep.Eta())) == histo_ele_genMatch.FindBin(recoeles[index1].pt(),abs(recoeles[index1].eta())):
+                    histo_ele_stab.Fill(genZlep.pt(),abs(genZlep.Eta()))
                     histo_ele_pur.Fill(recoeles[index1].pt(),abs(recoeles[index1].eta()))
 
     
@@ -243,7 +253,7 @@ def processSubsample(file):
                 if mu.pt() < 80:
                     continue
                 
-                histo_mu_reco.Fill(mu.pt(),abs(mu.rapidity()))
+                histo_mu_reco.Fill(mu.pt(),abs(mu.eta()))
                 dr1 = deltaR(mu.eta(),mu.phi(),genZlep.eta(),genZlep.phi())
                 if dr1 < closestDr1 :
                     closestDr1 = dr1
@@ -251,11 +261,11 @@ def processSubsample(file):
 
 
             if index1 != -1 and closestDr1 < 0.1: # found a matching muctron for genlepon1
-                histo_mu_genMatch.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
-                histo_mu_recoMatch.Fill(recomus[index1].pt(),abs(recomus[index1].rapidity()))
-                if histo_mu_genMatch.FindBin(genZlep.pt(),abs(genZlep.Rapidity())) == histo_mu_genMatch.FindBin(recomus[index1].pt(),abs(recomus[index1].rapidity())):
-                    histo_mu_stab.Fill(genZlep.pt(),abs(genZlep.Rapidity()))
-                    histo_mu_pur.Fill(recomus[index1].pt(),abs(recomus[index1].rapidity()))
+                histo_mu_genMatch.Fill(genZlep.pt(),abs(genZlep.Eta()))
+                histo_mu_recoMatch.Fill(recomus[index1].pt(),abs(recomus[index1].eta()))
+                if histo_mu_genMatch.FindBin(genZlep.pt(),abs(genZlep.Eta())) == histo_mu_genMatch.FindBin(recomus[index1].pt(),abs(recomus[index1].eta())):
+                    histo_mu_stab.Fill(genZlep.pt(),abs(genZlep.Eta()))
+                    histo_mu_pur.Fill(recomus[index1].pt(),abs(recomus[index1].eta()))
 
            
 

@@ -152,8 +152,9 @@ RooWorkspace* SidebandFitter::getAlphaFit(TTree* treeMC, int nxjCategory, const 
     bool isSignalRegion = (region==1.0);
     if( isSignalRegion ) h1_mZZ_signalRegion.Fill(mZZd, eventWeight);
     if( isSignalRegion ) h1_mZZ_signalRegion_nw.Fill(mZZd);
-    if( !isSignalRegion && region==0.0) h1_mZZ_sidebands.Fill(mZZd, eventWeight);
-    if( !isSignalRegion && region==0.0) h1_mZZ_sidebands_nw.Fill(mZZd);
+    if( !isSignalRegion && region==0.0 &&mZqq<70.0) h1_mZZ_sidebands.Fill(mZZd, eventWeight);
+    if( !isSignalRegion && region==0.0 &&mZqq<70.0) h1_mZZ_sidebands_nw.Fill(mZZd);
+  
     h1_jj.Fill(mZqq, eventWeight);
     //std::cout << "Entry (2): " << iEntry << "/" << treeMC->GetEntries() << std::endl;
   }
@@ -401,7 +402,7 @@ RooWorkspace* SidebandFitter::getAlphaFit(TTree* treeMC, int nxjCategory, const 
     fitExpoRatio->FixParameter(1,0.0);
     fitExpoRatio->FixParameter(2,(alpha_fit_SIG-alpha_fit_SB));
     fitExpoRatio->SetLineColor(kMagenta);
-    h1_alpha_smooth->Fit(fitExpoRatio,"QR+");   
+    h1_alpha_smooth->Fit(fitExpoRatio,"QRN");   
 
     h1_alpha_smooth->SetStats(0);
     h1_alpha_smooth->Draw("F");
@@ -418,10 +419,11 @@ RooWorkspace* SidebandFitter::getAlphaFit(TTree* treeMC, int nxjCategory, const 
     // double tmpRatioInt=ratioFit2->createIntegral(mZZ,RooFit::Range("fitRange"))->getVal();
     // cout<<"TMP RATIO INT ="<<tmpRatioInt<<endl;
     // double corrIntegral=alpha_hist_int/tmpRatioInt;
-    ratioFit2->plotOn(xfRatio, RooFit::Normalization(1.1*alpha_hist_int,RooAbsPdf::NumEvent), RooFit::LineColor(kRed),RooFit::NormRange("fitRange"),RooFit::Range("fitRange"));
-    xfRatio->SetMinimum(h1_alpha_smooth->GetMinimum());
-    xfRatio->SetMaximum(h1_alpha_smooth->GetMaximum());
-    xfRatio->Draw("same");
+    //
+    // ratioFit2->plotOn(xfRatio, RooFit::Normalization(1.1*alpha_hist_int,RooAbsPdf::NumEvent), RooFit::LineColor(kRed),RooFit::NormRange("fitRange"),RooFit::Range("fitRange"));
+    //xfRatio->SetMinimum(h1_alpha_smooth->GetMinimum());
+    // xfRatio->SetMaximum(h1_alpha_smooth->GetMaximum());
+    //xfRatio->Draw("same");
 
     /*
     //draw ratio of functions fitted above 
@@ -844,14 +846,20 @@ int SidebandFitter::smoothHist(TH1 &h, bool forceCorrZero,int smoothLevel){
     if((bincontP>3.0*runAvg) && (binerrP/bincontP>0.50) ){
       int i2=2;
       std::cout<<"Fixing outlier binPlus "<<bincontP<<" >> "<<runAvg<<endl;
-      while(bincontP>3.0*runAvg && (b+i2<nbins)){
-
-	 
-	bincontP=h.GetBinContent(b+i2);
-	binerrP=h.GetBinError(b+i2);
-	i2++;
-	 
-	
+      while( (bincontP>3.0*runAvg) && (binerrP/bincontP>0.50)){
+	int binNEW=b+i2;
+	if(binNEW>nbins){
+	  binNEW=nbins;
+	  bincontP=runAvg;
+	  binerrP=runAvg*2.0;
+	  break;
+	}
+	else{
+	  bincontP=h.GetBinContent(binNEW);
+	  binerrP=h.GetBinError(binNEW);
+	  i2++;
+	}
+	 	
       }//end while bincontP>3.0*runAvg
     }//end if bincontP>3.0*runAvg
     
